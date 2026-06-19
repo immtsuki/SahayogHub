@@ -70,8 +70,6 @@ Citizens report  →  Community sees  →  Authorities respond  →  Issues reso
 
 <br/>
 
-### 🔴 CRITICAL — Tier 1
-
 <details open>
 <summary><strong>🧑 Missing Person Search &nbsp;|&nbsp; Impact: 10/10</strong></summary>
 
@@ -102,8 +100,6 @@ One-tap **geo-tagged emergency alerts** to local authorities or pre-set personal
 </details>
 
 <br/>
-
-### 🟡 CORE — Tier 2
 
 <details open>
 <summary><strong>🐾 Lost & Found &nbsp;|&nbsp; Impact: 8/10</strong></summary>
@@ -136,7 +132,6 @@ A **transparent fundraising module** for medical emergencies, disaster victims, 
 
 <br/>
 
-### 🟢 AWARENESS — Tier 3
 
 <details open>
 <summary><strong>🏗️ Road & Public Hazard Reporting &nbsp;|&nbsp; Impact: 7/10</strong></summary>
@@ -177,10 +172,10 @@ A **whistleblower-friendly portal** where citizens can flag corrupt practices, u
 |:---:|:---:|:---|
 | **Frontend** | ![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=00e5ff) | UI, routing, state management |
 | **Backend** | ![Django](https://img.shields.io/badge/Django-092E20?style=flat-square&logo=django&logoColor=00e5ff) | REST API, auth, business logic |
-| **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-0d1b4b?style=flat-square&logo=postgresql&logoColor=00e5ff) | `[Specify: PostgreSQL / SQLite]` |
+| **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-0d1b4b?style=flat-square&logo=postgresql&logoColor=00e5ff) | PostgreSQL  |
 | **Auth** | ![JWT](https://img.shields.io/badge/JWT-0d1b4b?style=flat-square&logo=jsonwebtokens&logoColor=00e5ff) | `[Specify: JWT / OAuth]` |
-| **Maps** | ![Leaflet](https://img.shields.io/badge/Leaflet-0d1b4b?style=flat-square&logo=leaflet&logoColor=00e5ff) | `[Specify: Leaflet / Google Maps]` |
-| **Hosting** | ![Vercel](https://img.shields.io/badge/Vercel-0d1b4b?style=flat-square&logo=vercel&logoColor=00e5ff) | `[Specify deployment platform]` |
+| **Maps** | ![Leaflet](https://img.shields.io/badge/Leaflet-0d1b4b?style=flat-square&logo=leaflet&logoColor=00e5ff) |  Google Maps |
+| **Hosting** | ![Vercel](https://img.shields.io/badge/Vercel-0d1b4b?style=flat-square&logo=vercel&logoColor=00e5ff) | Github |
 
 </div>
 
@@ -204,41 +199,6 @@ A **whistleblower-friendly portal** where citizens can flag corrupt practices, u
 │              PostgreSQL / SQLite                         │
 └──────────────────────────────────────────────────────────┘
 ```
-
-<img src="divider.svg" width="100%"/>
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- **Node.js** `v18+`
-- **Python** `3.10+`
-- **pip** and **npm**
-
-### Installation
-
-```bash
-# 1. Clone the repo
-git clone YOUR_REPO_LINK_HERE
-cd SahayogHub
-
-# 2. Backend
-cd backend
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-
-# 3. Frontend (new terminal)
-cd ../frontend
-npm install
-npm run dev
-```
-
-| Service | URL |
-|---|---|
-| 🌐 Frontend | `http://localhost:5173` |
-| ⚙️ Backend API | `http://localhost:8000/api` |
-| 🔑 Admin Panel | `http://localhost:8000/admin` |
 
 <img src="divider.svg" width="100%"/>
 
