@@ -25,14 +25,12 @@
 
 > *Right now, when something goes wrong in your community — there is no single place to turn.*
 
-When a dog goes missing, a road collapses, a child disappears, or a family needs emergency funds — citizens face a **fragmented maze**:
+When a dog goes missing, a road collapses, a child disappearss — citizens face a **fragmented maze**:
 
 | ❌ Current Reality | ✅ With SahayogHub |
 |---|---|
 | Post on 5 Facebook groups, hope someone sees it | One upload. Instant community reach. |
-| File complaints at government offices with zero follow-up | Geotagged reports with live status tracking |
 | Search WhatsApp/Viber groups for a missing person | Searchable, centralized database |
-| No transparent way to raise or track community funds | Public fundraising with full accountability |
 
 **The solutions exist. They are just scattered, unmanaged, and inaccessible.**
 
@@ -52,26 +50,17 @@ Citizens report  →  Community sees  →  Authorities respond  →  Issues reso
 
 <div align="center">
 
-| 🏠 Dashboard | 🔍 Lost & Found | 🚨 Emergency SOS |
-|:---:|:---:|:---:|
-| `[Paste Screenshot]` | `[Paste Screenshot]` | `[Paste Screenshot]` |
+| 🏠 Dashboard | 🔍 Lost & Found | 🚨 Emergency SOS | 🧑 Missing Person |
 
-| 🧑 Missing Person | 💰 Fundraiser | 🗺️ Hazard Map |
-|:---:|:---:|:---:|
-| `[Paste Screenshot]` | `[Paste Screenshot]` | `[Paste Screenshot]` |
 
+
+| `[Paste Screenshot]` | `[Paste Screenshot]` | `[Paste Screenshot]` | `[Paste Screenshot]` |
 </div>
 
 <img src="divider.svg" width="100%"/>
 
-## ⭐ Features — Priority Ranked
-
-> Rated by **Civic Impact × Urgency × Build Feasibility**
-
-<br/>
-
 <details open>
-<summary><strong>🧑 Missing Person Search &nbsp;|&nbsp; Impact: 10/10</strong></summary>
+<summary><strong>🧑 Missing Person Search &nbsp; </strong></summary>
 
 <br/>
 
@@ -87,22 +76,7 @@ A searchable, photo-driven database for missing persons. Citizens and law enforc
 <br/>
 
 <details open>
-<summary><strong>🚨 Emergency SOS &nbsp;|&nbsp; Impact: 10/10</strong></summary>
-
-<br/>
-
-One-tap **geo-tagged emergency alerts** to local authorities or pre-set personal contacts. Built for speed when seconds count.
-
-- 📍 Trigger SOS with real-time location share
-- 🚒 Notify police, fire, or medical services instantly
-- 🔴 Panic button optimized for vulnerable individuals
-
-</details>
-
-<br/>
-
-<details open>
-<summary><strong>🐾 Lost & Found &nbsp;|&nbsp; Impact: 8/10</strong></summary>
+<summary><strong>🐾 Lost & Found &nbsp;</strong></summary>
 
 <br/>
 
@@ -117,50 +91,6 @@ No more scrolling through ten Facebook pages. Citizens upload **lost or found it
 
 <br/>
 
-<details open>
-<summary><strong>💰 Community Fundraiser &nbsp;|&nbsp; Impact: 8/10</strong></summary>
-
-<br/>
-
-A **transparent fundraising module** for medical emergencies, disaster victims, and education support. Every rupee is traceable.
-
-- 📊 Live progress bars, donor counts, target amounts
-- 🔍 **Public transparency dashboard** — all collections visible
-- ✅ Verified campaign badges for trusted causes
-
-</details>
-
-<br/>
-
-
-<details open>
-<summary><strong>🏗️ Road & Public Hazard Reporting &nbsp;|&nbsp; Impact: 7/10</strong></summary>
-
-<br/>
-
-Citizens report **potholes, broken infrastructure, and public hazards** in real time. Reports are geotagged and escalated to the relevant municipal authority.
-
-- 📸 Photo + location upload for any hazard
-- 📋 Status tracking: `Reported` → `Acknowledged` → `Resolved`
-- 👁️ Public visibility board to hold authorities accountable
-
-</details>
-
-<br/>
-
-<details open>
-<summary><strong>🔍 Corruption Awareness & Reporting &nbsp;|&nbsp; Impact: 9/10</strong></summary>
-
-<br/>
-
-A **whistleblower-friendly portal** where citizens can flag corrupt practices, upload evidence, and demand accountability — with full anonymity support.
-
-- 📁 Submit reports with document/photo evidence
-- 👤 Choose anonymous or identified reporting
-- 👍 Community upvote system for visibility
-- 📬 Auto-forward to relevant oversight bodies
-
-</details>
 
 <img src="divider.svg" width="100%"/>
 
@@ -186,7 +116,7 @@ A **whistleblower-friendly portal** where citizens can flag corrupt practices, u
 ```
 ┌──────────────────────────────────────────────────────────┐
 │                    React Frontend                        │
-│  Lost&Found │ Missing │ SOS │ Fundraiser │ Reports       │
+│  Lost&Found │ Missing │ SOS │ Reports                    │
 └───────────────────────────┬──────────────────────────────┘
                             │  REST API (JSON)
 ┌───────────────────────────▼──────────────────────────────┐
@@ -204,10 +134,11 @@ A **whistleblower-friendly portal** where citizens can flag corrupt practices, u
 
 ## 🗺️ Future Roadmap
 
-| Priority | Feature | Description |
+| Future | Feature | Description |
 |:---:|---|---|
 | 🔴 | **Theft Report System** | File and track theft complaints with evidence and case numbers |
 | 🔴 | **Criminal Identification Search** | Search flagged individuals, linked to law enforcement |
+| 🟡 | **Fund Raiser** | Help needy raise a fund |
 | 🟡 | **AI Match Alerts** | Auto-match lost items & missing persons to new reports |
 | 🟡 | **Government Service Integration** | Direct links to official e-gov portals |
 | 🟢 | **Nepali Language Support** | Full localization for rural and broader reach |
