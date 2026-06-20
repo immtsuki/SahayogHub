@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import StatusBadge from '../../../shared/components/StatusBadge';
 import ItemDetailModal from '../../../shared/components/ItemDetailModal';
+import { useRequireAuth } from '../../../shared/hooks/useRequireAuth';
 import type { MatchItem } from '../data';
 
 interface MatchCardProps {
@@ -9,6 +10,7 @@ interface MatchCardProps {
 
 export default function MatchCard({ item }: MatchCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
+  const requireAuth = useRequireAuth();
 
   return (
     <>
@@ -84,7 +86,7 @@ export default function MatchCard({ item }: MatchCardProps) {
 
           {/* View Details */}
           <button
-            onClick={() => setDetailOpen(true)}
+            onClick={() => requireAuth(() => setDetailOpen(true))}
             className="w-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors duration-150"
           >
             View Details

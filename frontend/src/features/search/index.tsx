@@ -2,8 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import SearchBar from './components/SearchBar';
 import MatchCard from './components/MatchCard';
-import { MATCH_ITEMS, STATUS_FILTERS } from './data';
-import type { StatusFilter } from './data';
+import { STATUS_FILTERS } from './data';
+import type { MatchItem, StatusFilter } from './data';
+import { fetchReports, toMatchItem } from '../../shared/api/reports';
 
 // ── Menu & category SVG icons ────────────────────────────────
 function IconFilter() {
@@ -167,6 +168,8 @@ function SortRow({ label, order, active, onToggle, onChange }: {
 export default function SearchPage() {
   const [query,        setQuery]        = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('Lost');
+  const [items, setItems] = useState<MatchItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Dropdown state
   const [menuOpen,  setMenuOpen]  = useState(false);
@@ -222,7 +225,34 @@ export default function SearchPage() {
     (locationInput || locationSortActive ? 1 : 0) +
     selectedCategories.length;
 
-  const filtered = MATCH_ITEMS;
+  useEffect(() => {
+    let active = true;
+
+    async function loadMatches() {
+      setLoading(true);
+      try {
+        const reports = await fetchReports({
+          q: query,
+          status: statusFilter,
+          category: selectedCategories.join(','),
+          location: locationInput,
+          recent: statusFilter === 'Recent',
+        });
+        if (active) setItems(reports.map(toMatchItem));
+      } catch {
+        if (active) setItems([]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadMatches();
+    return () => {
+      active = false;
+    };
+  }, [query, statusFilter, selectedCategories, locationInput]);
+
+  const filtered = items;
 
   // ── Dropdown panels ────────────────────────────────────────
   const topMenu = (
@@ -460,7 +490,7 @@ export default function SearchPage() {
             </button>
           ))}
         </div>
-        <p className="text-sm text-gray-400 shrink-0">247 matches found</p>
+        <p className="text-sm text-gray-400 shrink-0">{filtered.length} matches found</p>
       </div>
 
       {/* ── Active filter pills ── */}
@@ -489,7 +519,11 @@ export default function SearchPage() {
 
       {/* ── Grid ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {filtered.map((item) => (
+        {loading ? (
+          <div className="col-span-full text-center py-16 text-sm text-gray-400">Loading matches...</div>
+        ) : filtered.length === 0 ? (
+          <div className="col-span-full text-center py-16 text-sm text-gray-400">No matches found.</div>
+        ) : filtered.map((item) => (
           <MatchCard key={item.id} item={item} />
         ))}
       </div>

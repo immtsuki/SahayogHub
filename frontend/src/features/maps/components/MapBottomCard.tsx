@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { MapMarker } from '../types';
 import StatusBadge from '../../../shared/components/StatusBadge';
 import ItemDetailModal from '../../../shared/components/ItemDetailModal';
+import { useRequireAuth } from '../../../shared/hooks/useRequireAuth';
 
 interface MapBottomCardProps {
   marker: MapMarker;
@@ -10,6 +11,7 @@ interface MapBottomCardProps {
 
 export default function MapBottomCard({ marker, onClose }: MapBottomCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
+  const requireAuth = useRequireAuth();
 
   return (
     <>
@@ -78,7 +80,7 @@ export default function MapBottomCard({ marker, onClose }: MapBottomCardProps) {
             </svg>
           </button>
           <button
-            onClick={() => setDetailOpen(true)}
+            onClick={() => requireAuth(() => setDetailOpen(true))}
             className="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors whitespace-nowrap"
           >
             View Details

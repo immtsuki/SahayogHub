@@ -4,12 +4,30 @@ import { useNavigate } from 'react-router-dom';
 import EditDetailsForm from './components/EditDetailsForm';
 import type { FormData } from './components/EditDetailsForm';
 import CameraModal from './components/CameraModal';
-import { useReports } from '../../shared/context/ReportContext';
-import type { SubmittedReport } from '../../shared/context/ReportContext';
+import type { SubjectType, SubmittedReport, AiMatch } from '../../shared/types';
+import { createReport } from '../../shared/api/reports';
+import { useAuth } from '../../shared/context/AuthContext';
+import MatchResultsModal from '../../shared/components/MatchResultsModal';
 
 type ReportType    = 'lost' | 'found';
-type ReportCategory = 'item' | 'human' | 'document';
+type ReportCategory = SubjectType;
 type Step = 'category' | 'select' | 'lost-upload' | 'found-upload' | 'analysis';
+
+function readImageFile(file: File): Promise<string | null> {
+  if (!file.type.startsWith('image/')) return Promise.resolve(null);
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function readImageFiles(files: FileList | File[]) {
+  const images = await Promise.all(Array.from(files).map(readImageFile));
+  return images.filter((image): image is string => Boolean(image));
+}
 
 // ── Shared helpers ─────────────────────────────────────────────
 function BackButton({ onClick }: { onClick: () => void }) {
@@ -31,7 +49,7 @@ const CATEGORIES: { key: ReportCategory; label: string; sub: string; color: stri
     color: 'border-gray-100 hover:border-blue-400',
     hover: 'bg-blue-50 group-hover:bg-blue-100',
     icon: (
-      <svg width="28" height="28" fill="none" stroke="#3b82f6" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
+      <svg width="28" height="28" fill="none" stroke="#D4AF37" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
         <line x1="3" y1="6" x2="21" y2="6"/>
         <path d="M16 10a4 4 0 0 1-8 0"/>
@@ -170,12 +188,10 @@ function LostUploadPage({
   const [cameraReview, setCameraReview] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function addFiles(files: FileList | null) {
+  async function addFiles(files: FileList | null) {
     if (!files) return;
-    const urls: string[] = [];
-    Array.from(files).forEach((f) => {
-      if (f.type.startsWith('image/')) urls.push(URL.createObjectURL(f));
-    });
+    const urls = await readImageFiles(files);
+    if (!urls.length) return;
     setPhotos((prev) => {
       const next = [...prev, ...urls];
       setActiveIdx(next.length - 1);
@@ -183,9 +199,9 @@ function LostUploadPage({
     });
   }
 
-  function handleFile(file: File) {
-    if (!file.type.startsWith('image/')) return;
-    const url = URL.createObjectURL(file);
+  async function handleFile(file: File) {
+    const url = await readImageFile(file);
+    if (!url) return;
     setPhotos((prev) => {
       const next = [...prev, url];
       setActiveIdx(next.length - 1);
@@ -205,7 +221,7 @@ function LostUploadPage({
     e.preventDefault();
     setDragging(false);
     const f = e.dataTransfer.files[0];
-    if (f) handleFile(f);
+    if (f) void handleFile(f);
   }, []);
 
   // Camera modal open
@@ -321,7 +337,7 @@ function LostUploadPage({
             }`}
           >
             <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center">
-              <svg width="28" height="28" fill="none" stroke="#3b82f6" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
+              <svg width="28" height="28" fill="none" stroke="#D4AF37" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
@@ -361,7 +377,7 @@ function LostUploadPage({
             Camera
           </button>
         </div>
-        <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
+        <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => void addFiles(e.target.files)} />
 
         <button
           onClick={() => onNext(photos[0] ?? null)}
@@ -390,12 +406,10 @@ function FoundUploadPage({
   const [addAfterReview, setAddAfterReview] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function addFiles(files: FileList | null) {
+  async function addFiles(files: FileList | null) {
     if (!files) return;
-    const urls: string[] = [];
-    Array.from(files).forEach((f) => {
-      if (f.type.startsWith('image/')) urls.push(URL.createObjectURL(f));
-    });
+    const urls = await readImageFiles(files);
+    if (!urls.length) return;
     setPhotos((prev) => {
       const next = [...prev, ...urls];
       setActiveIdx(next.length - 1);
@@ -612,7 +626,7 @@ function FoundUploadPage({
             <span className="hidden sm:inline">Take Photo</span>
           </button>
         </div>
-        <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
+        <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => void addFiles(e.target.files)} />
 
         {!canContinue && photos.length > 0 && (
           <p className="text-xs text-amber-500 text-center -mt-2">Add at least one more photo from a different angle.</p>
@@ -631,19 +645,28 @@ function FoundUploadPage({
 }
 
 // ── Image carousel ─────────────────────────────────────────────
-const FALLBACK_IMGS = [
-  'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=700&auto=format&fit=crop',
-  'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=700&auto=format&fit=crop',
-];
-
 const BACKEND_CATEGORY_BY_LABEL: Record<string, string> = {
+  Document: 'document',
+  'National ID': 'document',
+  Passport: 'document',
+  License: 'document',
+  Certificate: 'document',
+  Person: 'human',
+  'Missing Person': 'human',
+  'Found Person': 'human',
   'Bags & Luggage': 'bags_luggage',
   Electronics: 'electronics',
   Clothing: 'clothing',
   Keys: 'keys',
-  Accessories: 'other',
-  Wallet: 'other',
+  Accessories: 'accessories',
+  Wallet: 'wallet',
   Other: 'other',
+};
+
+const DEFAULT_CATEGORY_BY_SUBJECT: Record<ReportCategory, string> = {
+  item: 'Other',
+  human: 'Person',
+  document: 'Document',
 };
 
 function createReportId() {
@@ -654,11 +677,13 @@ function buildSubmittedReport({
   formData,
   images,
   reportType,
+  reportCategory,
   submittedAt,
 }: {
   formData: FormData;
   images: string[];
   reportType: ReportType;
+  reportCategory: ReportCategory;
   submittedAt: string;
 }): SubmittedReport {
   const title = formData.itemName.trim() || 'Untitled report';
@@ -667,6 +692,7 @@ function buildSubmittedReport({
   return {
     id: createReportId(),
     category: reportType,
+    subjectType: reportCategory,
     status: reportType === 'lost' ? 'not_found' : 'owner_not_found',
     title,
     description: formData.description.trim() || `${categoryLabel} report for ${title}`,
@@ -691,8 +717,10 @@ function buildBackendReportPayload(report: SubmittedReport) {
     id: report.id,
     title: report.title,
     description: report.description,
-    status: report.category,
-    category: BACKEND_CATEGORY_BY_LABEL[report.category_label] ?? 'other',
+    report_type: report.category,
+    subject_type: report.subjectType,
+    status: report.status,
+    category: report.subjectType === 'item' ? BACKEND_CATEGORY_BY_LABEL[report.category_label] ?? 'other' : report.subjectType,
     category_label: report.category_label,
     location_label: report.location,
     latitude: report.lat,
@@ -702,19 +730,6 @@ function buildBackendReportPayload(report: SubmittedReport) {
     reported_at: report.submittedAt,
     client_report: report,
   };
-}
-
-async function submitReportToBackend(report: SubmittedReport) {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? '';
-  const response = await fetch(`${baseUrl}/api/reports`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(buildBackendReportPayload(report)),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Report API responded with ${response.status}`);
-  }
 }
 
 function ImageCarousel({ images }: { images: string[] }) {
@@ -790,49 +805,102 @@ function ImageCarousel({ images }: { images: string[] }) {
 }
 
 // ── Step 2 — Analysis ──────────────────────────────────────────
-function AnalysisPage({ images, onBack, reportType }: { images: string[]; onBack: () => void; reportType: 'lost' | 'found' }) {
+function AnalysisPage({
+  images,
+  onBack,
+  reportType,
+  reportCategory,
+}: {
+  images: string[];
+  onBack: () => void;
+  reportType: ReportType;
+  reportCategory: ReportCategory;
+}) {
   const navigate    = useNavigate();
-  const { addReport } = useReports();
-  const imgs        = images.length > 0 ? images : FALLBACK_IMGS;
-  const [toast, setToast]       = useState(false);
+  const { user } = useAuth();
+  const imgs        = images;
+  const formKey = `${reportCategory}-${user?.email ?? 'guest'}`;
+  const [toast] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [matchResults, setMatchResults] = useState<AiMatch[] | null>(null);
   const formDataRef = useRef<FormData>({
-    itemName: 'Black Nike Backpack',
-    category: 'Bags & Luggage',
+    itemName: '',
+    category: DEFAULT_CATEGORY_BY_SUBJECT[reportCategory],
     description: '',
-    contactName: 'Jordan Blake',
-    email: 'jordan.blake@email.com',
+    contactName: '',
+    email: '',
     phone: '',
     location: null,
   });
 
   async function handleContinue() {
+    if (submitting) return;
     const fd = formDataRef.current;
     const now = new Date().toISOString();
+    setSubmitting(true);
+    setSubmitError(null);
 
     const report = buildSubmittedReport({
       formData: fd,
       images,
       reportType,
+      reportCategory,
       submittedAt: now,
     });
 
-    addReport(report);
-
     try {
-      await submitReportToBackend(report);
-    } catch (error) {
-      console.warn('Backend report submit failed; report is available locally.', error);
-    }
+      const savedReport = await createReport(buildBackendReportPayload(report));
+      const savedId = savedReport.id;
 
-    setToast(true);
-    setTimeout(() => {
-      setToast(false);
-      navigate('/notifications');
-    }, 2000);
+      // AI runs in a background thread — poll for results for up to 30 s
+      let matches: AiMatch[] = savedReport.aiMatches || savedReport.ai_matches || [];
+
+      if (matches.length === 0) {
+        const MAX_POLLS = 15;
+        const POLL_MS   = 2000;
+        for (let i = 0; i < MAX_POLLS; i++) {
+          await new Promise((res) => setTimeout(res, POLL_MS));
+          try {
+            const { fetchReports } = await import('../../shared/api/reports');
+            const updated = await fetchReports({ ids: [savedId] });
+            const updatedReport = updated[0];
+            if (updatedReport) {
+              const found = updatedReport.aiMatches || updatedReport.ai_matches || [];
+              if (found.length > 0 || updatedReport.aiStatus === 'processed' || updatedReport.ai_status === 'processed') {
+                matches = found as AiMatch[];
+                break;
+              }
+            }
+          } catch {
+            break; // stop polling on network error
+          }
+        }
+      }
+
+      setMatchResults(matches);
+    } catch (error) {
+      console.warn('Backend report submit failed.', error);
+      setSubmitError('Could not save this report to the database. Please check the backend and try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <div className="bg-gray-50">
+
+      {/* ── Match results modal ── */}
+      {matchResults !== null && (
+        <MatchResultsModal
+          reportType={reportType}
+          matches={matchResults}
+          onClose={() => {
+            setMatchResults(null);
+            navigate('/notifications');
+          }}
+        />
+      )}
 
       {/* ── Success toast ── */}
       {toast && (
@@ -856,10 +924,19 @@ function AnalysisPage({ images, onBack, reportType }: { images: string[]; onBack
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <ImageCarousel images={imgs} />
           </div>
-          <EditDetailsForm onDataChange={(d) => { formDataRef.current = d; }} />
+          <EditDetailsForm key={formKey} subjectType={reportCategory} onDataChange={(d) => { formDataRef.current = d; }} />
+          {submitError && (
+            <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+              {submitError}
+            </p>
+          )}
           <div className="flex justify-end">
-            <button onClick={handleContinue} className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-8 py-3 rounded-xl flex items-center gap-2 transition-colors cursor-pointer">
-              Continue →
+            <button
+              onClick={handleContinue}
+              disabled={submitting}
+              className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold px-8 py-3 rounded-xl flex items-center gap-2 transition-colors cursor-pointer disabled:cursor-wait"
+            >
+              {submitting ? 'Saving...' : 'Continue'}
             </button>
           </div>
         </main>
@@ -874,9 +951,18 @@ function AnalysisPage({ images, onBack, reportType }: { images: string[]; onBack
           </div>
         </div>
         <ImageCarousel images={imgs} />
-        <EditDetailsForm onDataChange={(d) => { formDataRef.current = d; }} />
-        <button onClick={handleContinue} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-2xl flex items-center justify-center gap-2 transition-colors cursor-pointer">
-          Continue →
+        <EditDetailsForm key={formKey} subjectType={reportCategory} onDataChange={(d) => { formDataRef.current = d; }} />
+        {submitError && (
+          <p className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+            {submitError}
+          </p>
+        )}
+        <button
+          onClick={handleContinue}
+          disabled={submitting}
+          className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold py-3 rounded-2xl flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:cursor-wait"
+        >
+          {submitting ? 'Saving...' : 'Continue'}
         </button>
       </div>
     </div>
@@ -886,7 +972,7 @@ function AnalysisPage({ images, onBack, reportType }: { images: string[]; onBack
 // ── Root ───────────────────────────────────────────────────────
 export default function AIAnalysisPage() {
   const [step,     setStep]     = useState<Step>('category');
-  const [, setCategory] = useState<ReportCategory>('item');
+  const [category, setCategory] = useState<ReportCategory>('item');
   const [type,     setType]     = useState<ReportType>('lost');
   const [images,   setImages]   = useState<string[]>([]);
 
@@ -913,5 +999,5 @@ export default function AIAnalysisPage() {
   if (step === 'select')       return <SelectTypePage onSelect={handleTypeSelect} onBack={() => setStep('category')} />;
   if (step === 'lost-upload')  return <LostUploadPage onNext={handleLostNext} onBack={() => setStep('select')} />;
   if (step === 'found-upload') return <FoundUploadPage onNext={handleFoundNext} onBack={() => setStep('select')} />;
-  return <AnalysisPage images={images} onBack={() => setStep(type === 'lost' ? 'lost-upload' : 'found-upload')} reportType={type} />;
+  return <AnalysisPage images={images} onBack={() => setStep(type === 'lost' ? 'lost-upload' : 'found-upload')} reportType={type} reportCategory={category} />;
 }

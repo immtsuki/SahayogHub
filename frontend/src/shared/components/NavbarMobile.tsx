@@ -15,7 +15,7 @@ export default function NavbarMobile() {
   const { user } = useAuth();
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100"
+      className="md:hidden fixed bottom-0 left-0 right-0 bg-[#141B3A] border-t border-[#141B3A]"
       style={{ zIndex: 9999 }}
       role="navigation"
       aria-label="Main navigation"
@@ -30,7 +30,7 @@ export default function NavbarMobile() {
             to={to}
             className={({ isActive }) =>
               `flex flex-col items-center gap-0.5 px-4 py-1 text-[11px] font-medium transition-colors ${
-                isActive ? 'text-blue-500' : 'text-gray-400'
+                isActive ? 'text-[#D4AF37]' : 'text-white/55'
               }`
             }
           >
@@ -47,7 +47,7 @@ export default function NavbarMobile() {
           to="/report"
           className={({ isActive }) =>
             `flex flex-col items-center gap-0.5 px-4 py-1 text-[11px] font-medium transition-colors ${
-              isActive ? 'text-blue-500' : 'text-gray-400'
+              isActive ? 'text-[#D4AF37]' : 'text-white/55'
             }`
           }
           aria-label="Create new report"
@@ -66,7 +66,7 @@ export default function NavbarMobile() {
             to={to}
             className={({ isActive }) =>
               `flex flex-col items-center gap-0.5 px-4 py-1 text-[11px] font-medium transition-colors ${
-                isActive ? 'text-blue-500' : 'text-gray-400'
+                isActive ? 'text-[#D4AF37]' : 'text-white/55'
               }`
             }
           >
@@ -85,7 +85,7 @@ export default function NavbarMobile() {
             to="/profile"
             className={({ isActive }) =>
               `flex flex-col items-center gap-0.5 px-4 py-1 text-[11px] font-medium transition-colors ${
-                isActive ? 'text-blue-500' : 'text-gray-400'
+                isActive ? 'text-[#D4AF37]' : 'text-white/55'
               }`
             }
           >
@@ -101,7 +101,7 @@ export default function NavbarMobile() {
             to="/login"
             className={({ isActive }) =>
               `flex flex-col items-center gap-0.5 px-4 py-1 text-[11px] font-medium transition-colors ${
-                isActive ? 'text-blue-500' : 'text-gray-400'
+                isActive ? 'text-[#D4AF37]' : 'text-white/55'
               }`
             }
           >

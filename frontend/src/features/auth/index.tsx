@@ -1,22 +1,32 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../shared/context/AuthContext';
 
 type Mode = 'login' | 'register';
 
-export default function AuthPage() {
-  const [mode, setMode]       = useState<Mode>('login');
-  const [name, setName]       = useState('');
-  const [email, setEmail]     = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError]     = useState('');
+function firstApiError(details: unknown) {
+  if (!details || typeof details !== 'object') return null;
+  const first = Object.values(details as Record<string, unknown>)[0];
+  if (Array.isArray(first)) return String(first[0]);
+  return typeof first === 'string' ? first : null;
+}
 
-  const { login } = useAuth();
-  const navigate  = useNavigate();
+export default function AuthPage() {
+  const [mode, setMode] = useState<Mode>('login');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const { login, register } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const redirectTo = (location.state as { from?: string } | null)?.from || '/';
 
   const inputCls = 'w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition';
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
 
@@ -29,28 +39,34 @@ export default function AuthPage() {
       return;
     }
 
-    // Demo auth — in production this would call an API
-    const displayName = mode === 'register' ? name : email.split('@')[0];
-    login(displayName, `https://i.pravatar.cc/36?u=${email}`, email);
-    navigate('/');
+    setLoading(true);
+    try {
+      if (mode === 'register') await register({ name, email, password });
+      else await login(email, password);
+      navigate(redirectTo, { replace: true });
+    } catch (err) {
+      const apiMessage = firstApiError((err as { details?: unknown }).details);
+      setError(apiMessage || 'Could not connect to your account. Please check your details and try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div className="min-h-full bg-gray-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-
-        {/* Logo */}
         <div className="flex items-center gap-2 text-blue-500 font-bold text-lg mb-6">
-          <span>📍</span>
           <span>Sahayog Hub</span>
         </div>
 
-        {/* Mode tabs */}
         <div className="flex gap-1 border-b border-gray-200 mb-6">
           {(['login', 'register'] as Mode[]).map((m) => (
             <button
               key={m}
-              onClick={() => { setMode(m); setError(''); }}
+              onClick={() => {
+                setMode(m);
+                setError('');
+              }}
               className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors capitalize cursor-pointer ${
                 mode === m
                   ? 'text-blue-500 border-blue-500'
@@ -68,7 +84,7 @@ export default function AuthPage() {
               <label className="text-sm font-medium text-gray-700">Full Name</label>
               <input
                 type="text"
-                placeholder="Jordan Blake"
+                placeholder="Full name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className={inputCls}
@@ -91,7 +107,7 @@ export default function AuthPage() {
             <label className="text-sm font-medium text-gray-700">Password</label>
             <input
               type="password"
-              placeholder="••••••••"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={inputCls}
@@ -104,40 +120,21 @@ export default function AuthPage() {
 
           <button
             type="submit"
-            className="w-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors duration-150 mt-1 cursor-pointer"
+            disabled={loading}
+            className="w-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-colors duration-150 mt-1 cursor-pointer"
           >
-            {mode === 'login' ? 'Log In' : 'Create Account'}
+            {loading ? 'Please wait...' : mode === 'login' ? 'Log In' : 'Create Account'}
           </button>
         </form>
-
-        {/* Divider */}
-        <div className="flex items-center gap-3 my-4">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs text-gray-400 font-medium">or</span>
-          <div className="flex-1 h-px bg-gray-200" />
-        </div>
-
-        {/* Google */}
-        <button
-          type="button"
-          className="w-full flex items-center justify-center gap-2.5 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium py-2.5 rounded-xl transition-colors cursor-pointer"
-        >
-          {/* Google 'G' logo */}
-          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-            <path fill="none" d="M0 0h48v48H0z"/>
-          </svg>
-          Continue with Google
-        </button>
 
         <p className="text-xs text-gray-400 text-center mt-5">
           {mode === 'login' ? "Don't have an account?" : 'Already have an account?'}
           {' '}
           <button
-            onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }}
+            onClick={() => {
+              setMode(mode === 'login' ? 'register' : 'login');
+              setError('');
+            }}
             className="text-blue-500 font-medium hover:underline cursor-pointer"
           >
             {mode === 'login' ? 'Register' : 'Log In'}

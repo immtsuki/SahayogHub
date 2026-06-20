@@ -17,28 +17,33 @@ L.Icon.Default.mergeOptions({
 
 // ── Icon helpers ──────────────────────────────────────────────────────────────
 
-function createStatusIcon(status: 'LOST' | 'FOUND') {
-  const isLost = status === 'LOST';
-  const bg = isLost ? '#ef4444' : '#22c55e';
-  const label = isLost ? 'Lost' : 'Found';
-
+function createItemThumbnailIcon(imageUrl: string, status: 'LOST' | 'FOUND') {
+  const borderColor = status === 'LOST' ? '#ef4444' : '#22c55e';
   return L.divIcon({
-    html: `<div style="
-        background:${bg};color:white;font-size:11px;font-weight:700;
-        padding:5px 12px;border-radius:999px;white-space:nowrap;
-        display:flex;align-items:center;gap:4px;
-        box-shadow:0 2px 8px rgba(0,0,0,.3);"
-    >📍 ${label}</div>`,
+    html: `
+      <div style="
+        width:42px;height:42px;border-radius:50%;overflow:hidden;
+        border:3px solid ${borderColor};
+        box-shadow:0 2px 8px rgba(0,0,0,0.35);
+        background:#f3f4f6;
+        flex-shrink:0;
+      ">
+        <img
+          src="${imageUrl}"
+          style="width:100%;height:100%;object-fit:cover;display:block;"
+          onerror="this.style.display='none'"
+        />
+      </div>`,
     className: '',
-    iconAnchor: [36, 16],
-    popupAnchor: [0, -22],
+    iconAnchor: [21, 21],
+    popupAnchor: [0, -26],
   });
 }
 
 function createClusterIcon(count: number) {
   return L.divIcon({
     html: `<div style="
-        background:#3b82f6;color:white;width:38px;height:38px;border-radius:50%;
+        background:#D4AF37;color:white;width:38px;height:38px;border-radius:50%;
         display:flex;align-items:center;justify-content:center;
         font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(59,130,246,.5);"
     >${count}</div>`,
@@ -51,7 +56,7 @@ function createUserLocationIcon() {
   return L.divIcon({
     html: `<div style="
         width:18px;height:18px;border-radius:50%;
-        background:#3b82f6;border:3px solid white;
+        background:#D4AF37;border:3px solid white;
         box-shadow:0 0 0 4px rgba(59,130,246,0.3),0 2px 8px rgba(0,0,0,0.25);">
       </div>`,
     className: '',
@@ -100,7 +105,7 @@ function RecenterControl({ userCoords }: { userCoords: [number, number] | null }
         bottom: 24,
         right: 16,
         zIndex: 1000,
-        background: '#3b82f6',
+        background: '#D4AF37',
         color: 'white',
         width: 48,
         height: 48,
@@ -115,8 +120,8 @@ function RecenterControl({ userCoords }: { userCoords: [number, number] | null }
         transition: 'background .2s',
       }}
       aria-label="My location"
-      onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = '#2563eb')}
-      onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = '#3b82f6')}
+      onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = '#B89224')}
+      onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = '#D4AF37')}
     >
       🎯
     </button>
@@ -171,12 +176,12 @@ export default function LeafletMap({
           </Marker>
         )}
 
-        {/* Item markers */}
+        {/* Item markers — thumbnail image with status-coloured ring */}
         {markers.map((m) => (
           <Marker
             key={m.id}
             position={[m.lat, m.lng]}
-            icon={createStatusIcon(m.status)}
+            icon={createItemThumbnailIcon(m.image, m.status)}
             eventHandlers={{ click: () => onMarkerClick(m) }}
           >
             <Popup>

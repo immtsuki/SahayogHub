@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FeedItem } from '../types';
 import StatusBadge from '../../../shared/components/StatusBadge';
 import ItemDetailModal from '../../../shared/components/ItemDetailModal';
+import { useRequireAuth } from '../../../shared/hooks/useRequireAuth';
 
 interface FeedCardProps {
   item: FeedItem;
@@ -9,6 +10,7 @@ interface FeedCardProps {
 
 export default function FeedCard({ item }: FeedCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
+  const requireAuth = useRequireAuth();
 
   return (
     <>
@@ -91,7 +93,7 @@ export default function FeedCard({ item }: FeedCardProps) {
 
           {/* View Details */}
           <button
-            onClick={() => setDetailOpen(true)}
+            onClick={() => requireAuth(() => setDetailOpen(true))}
             className="w-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors duration-150"
           >
             View Details

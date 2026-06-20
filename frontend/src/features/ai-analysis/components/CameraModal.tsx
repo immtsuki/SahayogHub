@@ -13,29 +13,31 @@ export default function CameraModal({ onCapture, onClose }: CameraModalProps) {
   const [ready, setReady]     = useState(false);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
 
-  async function startCamera(facing: 'environment' | 'user') {
+  useEffect(() => {
+    let active = true;
     streamRef.current?.getTracks().forEach((t) => t.stop());
-    setReady(false);
-    setError(null);
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facing },
-        audio: false,
-      });
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode },
+      audio: false,
+    }).then((stream) => {
+      if (!active) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.onloadedmetadata = () => setReady(true);
       }
-    } catch {
-      setError('Camera access denied or unavailable. Please allow camera permissions.');
-    }
-  }
+    }).catch(() => {
+      if (active) setError('Camera access denied or unavailable. Please allow camera permissions.');
+    });
 
-  useEffect(() => {
-    startCamera(facingMode);
-    return () => streamRef.current?.getTracks().forEach((t) => t.stop());
+    return () => {
+      active = false;
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
   }, [facingMode]);
 
   function capture() {
@@ -83,7 +85,11 @@ export default function CameraModal({ onCapture, onClose }: CameraModalProps) {
 
         {/* Flip camera */}
         <button
-          onClick={() => setFacingMode((f) => f === 'environment' ? 'user' : 'environment')}
+          onClick={() => {
+            setReady(false);
+            setError(null);
+            setFacingMode((f) => f === 'environment' ? 'user' : 'environment');
+          }}
           className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center transition-colors cursor-pointer"
           aria-label="Flip camera"
         >

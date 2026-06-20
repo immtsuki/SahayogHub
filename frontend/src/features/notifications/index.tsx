@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { NOTIFICATIONS } from './data';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Notification, NotifStatus } from './data';
-import { useReports } from '../../shared/context/ReportContext';
-import type { SubmittedReport } from '../../shared/context/ReportContext';
+import type { SubmittedReport } from '../../shared/types';
 import ItemDetailModal from '../../shared/components/ItemDetailModal';
+import { useAuth } from '../../shared/context/AuthContext';
+import { useRequireAuth } from '../../shared/hooks/useRequireAuth';
+import { fetchReports, toSubmittedReport, updateReport } from '../../shared/api/reports';
+import type { ApiReport } from '../../shared/api/reports';
 
 const LOST_OPTIONS: { value: NotifStatus; label: string; dot: string }[] = [
   { value: 'found', label: 'Found', dot: 'bg-green-500' },
@@ -120,9 +122,12 @@ function NotifCard({
 
 function SubmittedReportCard({ report }: { report: SubmittedReport }) {
   const [detailOpen, setDetailOpen] = useState(false);
+  const [matchId, setMatchId] = useState<string | null>(null);
+  const requireAuth = useRequireAuth();
   const isLost = report.category === 'lost';
   const img = report.images[0];
   const submittedDate = report.submittedAt ? new Date(report.submittedAt).toLocaleString() : report.timeAgo;
+  const selectedMatch = report.aiMatches?.find((match) => match.id === matchId);
 
   return (
     <>
@@ -148,6 +153,31 @@ function SubmittedReportCard({ report }: { report: SubmittedReport }) {
             },
           }}
           onClose={() => setDetailOpen(false)}
+        />
+      )}
+      {selectedMatch && (
+        <ItemDetailModal
+          item={{
+            id: selectedMatch.id,
+            title: selectedMatch.title,
+            description: selectedMatch.description,
+            image: selectedMatch.image,
+            status: selectedMatch.report_type === 'lost' ? 'LOST' : 'FOUND',
+            date: selectedMatch.date,
+            location: selectedMatch.location,
+            lat: selectedMatch.lat ?? undefined,
+            lng: selectedMatch.lng ?? undefined,
+            distance: selectedMatch.lat !== null && selectedMatch.lng !== null ? 'Pinned location' : 'No distance',
+            postedAgo: selectedMatch.postedAgo,
+            matchPercent: selectedMatch.matchPercent,
+            user: {
+              name: selectedMatch.contact?.name || selectedMatch.user.name,
+              avatar: selectedMatch.contact?.avatar || selectedMatch.user.avatar,
+              email: selectedMatch.contact?.email || selectedMatch.user.email,
+              phone: selectedMatch.contact?.phone || selectedMatch.user.phone,
+            },
+          }}
+          onClose={() => setMatchId(null)}
         />
       )}
 
@@ -181,35 +211,127 @@ function SubmittedReportCard({ report }: { report: SubmittedReport }) {
           <div className="flex flex-col items-end gap-1.5 shrink-0">
             <span className="text-[11px] text-gray-400">{report.timeAgo}</span>
             <button
-              onClick={() => setDetailOpen(true)}
+              onClick={() => requireAuth(() => setDetailOpen(true))}
               className="text-xs font-semibold text-blue-600 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer whitespace-nowrap"
             >
               View Details
             </button>
           </div>
         </div>
+        {report.aiMatches && report.aiMatches.length > 0 && (
+          <div className="border-t border-blue-100 px-4 py-3 bg-blue-50/50">
+            <p className="text-xs font-semibold text-blue-700 mb-2">Potential AI matches</p>
+            <div className="flex flex-col gap-2">
+              {report.aiMatches.map((match) => (
+                <button
+                  key={match.id}
+                  onClick={() => requireAuth(() => setMatchId(match.id))}
+                  className="flex items-center gap-3 rounded-xl border border-blue-100 bg-white p-2 text-left hover:border-blue-300 transition-colors cursor-pointer"
+                >
+                  <img src={match.image} alt={match.title} className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${match.report_type === 'lost' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                        {match.report_type === 'lost' ? 'LOST' : 'FOUND'}
+                      </span>
+                      <span className="text-[10px] font-bold text-blue-600">{match.matchPercent}% match</span>
+                    </div>
+                    <p className="text-xs font-semibold text-gray-900 truncate mt-1">{match.title}</p>
+                    <p className="text-[11px] text-gray-400 truncate">{match.location}</p>
+                  </div>
+                  <span className="text-xs font-semibold text-blue-600 shrink-0">View</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
 }
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [backendSubmissions, setBackendSubmissions] = useState<SubmittedReport[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
-  const { reports: submittedReports } = useReports();
+  const { user } = useAuth();
 
-  function updateStatus(id: string, status: NotifStatus) {
+  function toNotification(report: ApiReport): Notification {
+    return {
+      id: report.id,
+      category: report.report_type,
+      status: report.status,
+      title: report.report_type === 'lost' ? `${report.title} - Search Active` : `${report.title} - Owner Search`,
+      description: report.description,
+      image: report.image,
+      location: report.location,
+      timeAgo: report.timeAgo,
+      read: report.read,
+    };
+  }
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadNotifications() {
+      setLoading(true);
+      try {
+        const [reports, mineReports] = await Promise.all([
+          fetchReports(),
+          user ? fetchReports({ mine: true }) : Promise.resolve([]),
+        ]);
+        if (!active) return;
+        setNotifications(reports.map(toNotification));
+        const submissionsById = new Map<string, ApiReport>();
+        mineReports.forEach((report) => submissionsById.set(report.id, report));
+        reports
+          .filter((report) => user?.email && report.contact?.email === user.email)
+          .forEach((report) => submissionsById.set(report.id, report));
+        setBackendSubmissions(Array.from(submissionsById.values()).map(toSubmittedReport));
+      } catch {
+        if (!active) return;
+        setNotifications([]);
+        setBackendSubmissions([]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadNotifications();
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  async function updateStatus(id: string, status: NotifStatus) {
     setNotifications((prev) =>
       prev.map((n) => n.id === id ? { ...n, status, read: true } : n)
     );
+    setBackendSubmissions((prev) =>
+      prev.map((report) => report.id === id ? { ...report, status, read: true } : report)
+    );
+    try {
+      await updateReport(id, { status } as Partial<ApiReport>);
+    } catch {
+      // Keep the optimistic UI state; the next refresh will reconcile it.
+    }
   }
 
-  function markAllRead() {
+  async function markAllRead() {
+    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setBackendSubmissions((prev) => prev.map((report) => ({ ...report, read: true })));
+    try {
+      await Promise.all(unreadIds.map((id) => updateReport(id, { read: true } as Partial<ApiReport>)));
+    } catch {
+      // The next API refresh will reconcile any rows that did not update.
+    }
   }
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   const visible = filter === 'unread' ? notifications.filter((n) => !n.read) : notifications;
+  const mergedSubmissions = useMemo(() => backendSubmissions, [backendSubmissions]);
 
   return (
     <div className="min-h-full bg-gray-50 px-3 sm:px-4 md:px-5 lg:px-8 py-4 pb-20 md:pb-6">
@@ -246,11 +368,11 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {submittedReports.length > 0 && (
+        {mergedSubmissions.length > 0 && (
           <div className="mb-4">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Your Submissions</p>
             <div className="flex flex-col gap-2">
-              {submittedReports.map((r) => (
+              {mergedSubmissions.map((r) => (
                 <SubmittedReportCard key={r.id} report={r} />
               ))}
             </div>
@@ -258,13 +380,15 @@ export default function NotificationsPage() {
           </div>
         )}
 
-        {visible.length > 0 ? (
+        {loading ? (
+          <div className="text-center py-16 text-sm text-gray-400">Loading notifications...</div>
+        ) : visible.length > 0 ? (
           <div className="flex flex-col gap-2">
             {visible.map((n) => (
               <NotifCard key={n.id} notif={n} onStatusChange={updateStatus} />
             ))}
           </div>
-        ) : submittedReports.length === 0 ? (
+        ) : mergedSubmissions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
             <svg width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />

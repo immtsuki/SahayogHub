@@ -4,8 +4,13 @@ import { useAuth } from '../../../shared/context/AuthContext';
 import LocationPreviewMap from '../../../shared/components/LocationPreviewMap';
 import LocationPickerModal from './LocationPickerModal';
 import type { PickedLocation } from './LocationPickerModal';
+import type { SubjectType } from '../../../shared/types';
 
-const CATEGORIES = ['Bags & Luggage', 'Electronics', 'Clothing', 'Accessories', 'Keys', 'Wallet', 'Other'];
+const CATEGORY_OPTIONS: Record<SubjectType, string[]> = {
+  item: ['Bags & Luggage', 'Electronics', 'Clothing', 'Accessories', 'Keys', 'Wallet', 'Other'],
+  human: ['Person', 'Missing Person', 'Found Person', 'Other'],
+  document: ['Document', 'National ID', 'Passport', 'License', 'Certificate', 'Other'],
+};
 
 const inputCls = 'w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition';
 
@@ -20,21 +25,30 @@ export interface FormData {
 }
 
 interface EditDetailsFormProps {
+  subjectType: SubjectType;
   onDataChange?: (data: FormData) => void;
 }
 
-export default function EditDetailsForm({ onDataChange }: EditDetailsFormProps) {
+export default function EditDetailsForm({ subjectType, onDataChange }: EditDetailsFormProps) {
   const { user } = useAuth();
-  const [itemName,     setItemName]     = useState('Black Nike Backpack');
-  const [category,     setCategory]     = useState('Bags & Luggage');
-  const [description,  setDescription]  = useState(
-    'Black Nike branded backpack with multiple compartments and padded straps. Last seen with a small keychain attached to the front zipper.'
-  );
-  const [contactName,  setContactName]  = useState(user?.name ?? 'Jordan Blake');
-  const [email,        setEmail]        = useState(user?.email ?? 'jordan.blake@email.com');
+  const categoryOptions = CATEGORY_OPTIONS[subjectType];
+  const [itemName,     setItemName]     = useState('');
+  const [category,     setCategory]     = useState(categoryOptions[0] ?? 'Other');
+  const [description,  setDescription]  = useState('');
+  const [contactName,  setContactName]  = useState(user?.name ?? '');
+  const [email,        setEmail]        = useState(user?.email ?? '');
   const [phone,        setPhone]        = useState(user?.phone ?? '');
   const [location,     setLocation]     = useState<PickedLocation | null>(null);
   const [pickerOpen,   setPickerOpen]   = useState(false);
+
+  // Sync contact fields when the auth user becomes available (e.g. after page refresh)
+  useEffect(() => {
+    if (user) {
+      setContactName((prev) => prev || user.name);
+      setEmail((prev) => prev || (user.email ?? ''));
+      setPhone((prev) => prev || (user.phone ?? ''));
+    }
+  }, [user]);
 
   const { coords, loading: geoLoading } = useGeolocation();
   const centre: [number, number] = coords ?? [40.78, -73.97];
@@ -78,7 +92,7 @@ export default function EditDetailsForm({ onDataChange }: EditDetailsFormProps) 
           <label className="text-sm font-medium text-gray-700">Category</label>
           <div className="relative">
             <select value={category} onChange={(e) => setCategory(e.target.value)} className={`${inputCls} appearance-none cursor-pointer`}>
-              {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+              {categoryOptions.map((c) => <option key={c}>{c}</option>)}
             </select>
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs">▼</span>
           </div>
@@ -100,12 +114,26 @@ export default function EditDetailsForm({ onDataChange }: EditDetailsFormProps) 
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-gray-700">User Name</label>
-            <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)} className={inputCls} />
+            <input
+              type="text"
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
+              className={inputCls}
+              placeholder="Your name"
+              autoComplete="name"
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-gray-700">Gmail / Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={inputCls}
+              placeholder="your@email.com"
+              autoComplete="email"
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">

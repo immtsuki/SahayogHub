@@ -19,7 +19,7 @@ export interface PickedLocation {
 // Fly to initial position once
 function FlyTo({ coords }: { coords: [number, number] }) {
   const map = useMap();
-  useEffect(() => { map.flyTo(coords, 15, { duration: 1 }); }, []);
+  useEffect(() => { map.flyTo(coords, 15, { duration: 1 }); }, [coords, map]);
   return null;
 }
 
@@ -68,7 +68,7 @@ interface LocationPickerModalProps {
 export default function LocationPickerModal({ initial, onConfirm, onClose }: LocationPickerModalProps) {
   const [pin, setPin]         = useState<[number, number]>(initial);
   const [label, setLabel]     = useState<string>('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   async function updatePin(pos: [number, number]) {
     setPin(pos);
@@ -78,8 +78,17 @@ export default function LocationPickerModal({ initial, onConfirm, onClose }: Loc
     setLoading(false);
   }
 
-  // Reverse-geocode the initial pin on mount
-  useEffect(() => { updatePin(initial); }, []);
+  useEffect(() => {
+    let active = true;
+    reverseGeocode(initial[0], initial[1]).then((l) => {
+      if (!active) return;
+      setLabel(l);
+      setLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [initial]);
 
   return (
     <div className="fixed inset-0 md:top-14 z-[9998] bg-black/60 backdrop-blur-sm flex flex-col">
