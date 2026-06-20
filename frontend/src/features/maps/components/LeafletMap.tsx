@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -14,6 +14,8 @@ L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
   shadowUrl: markerShadow,
 });
+
+// ── Icon helpers ──────────────────────────────────────────────────────────────
 
 function createStatusIcon(status: 'LOST' | 'FOUND') {
   const isLost = status === 'LOST';
@@ -45,14 +47,49 @@ function createClusterIcon(count: number) {
   });
 }
 
-function RecenterControl() {
+function createUserLocationIcon() {
+  return L.divIcon({
+    html: `<div style="
+        width:18px;height:18px;border-radius:50%;
+        background:#3b82f6;border:3px solid white;
+        box-shadow:0 0 0 4px rgba(59,130,246,0.3),0 2px 8px rgba(0,0,0,0.25);">
+      </div>`,
+    className: '',
+    iconAnchor: [9, 9],
+    popupAnchor: [0, -12],
+  });
+}
+
+// ── Map sub-components ────────────────────────────────────────────────────────
+
+/** Flies to the user's location the first time it becomes available. */
+function RecenterOnUser({ coords }: { coords: [number, number] | null }) {
+  const map = useMap();
+  const didFly = useRef(false);
+
+  useEffect(() => {
+    if (coords && !didFly.current) {
+      map.flyTo(coords, 15, { duration: 1.4 });
+      didFly.current = true;
+    }
+  }, [coords, map]);
+
+  return null;
+}
+
+/** Blue "recenter" FAB — flies back to live coords on tap. */
+function RecenterControl({ userCoords }: { userCoords: [number, number] | null }) {
   const map = useMap();
 
   const handleClick = () => {
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => map.flyTo([coords.latitude, coords.longitude], 14),
-      () => map.flyTo([40.78, -73.97], 13),
-    );
+    if (userCoords) {
+      map.flyTo(userCoords, 15);
+    } else {
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => map.flyTo([coords.latitude, coords.longitude], 15),
+        () => map.flyTo([40.78, -73.97], 13),
+      );
+    }
   };
 
   return (
@@ -86,10 +123,13 @@ function RecenterControl() {
   );
 }
 
+// ── Main component ────────────────────────────────────────────────────────────
+
 interface LeafletMapProps {
   markers: MapMarker[];
   clusterMarkers?: { lat: number; lng: number; count: number }[];
   onMarkerClick: (marker: MapMarker) => void;
+  userLocation?: [number, number] | null;
   center?: [number, number];
   zoom?: number;
 }
@@ -98,6 +138,7 @@ export default function LeafletMap({
   markers,
   clusterMarkers = [],
   onMarkerClick,
+  userLocation = null,
   center = [40.78, -73.97],
   zoom = 13,
 }: LeafletMapProps) {
@@ -106,15 +147,31 @@ export default function LeafletMap({
   return (
     <div ref={containerRef} className="relative w-full h-full">
       <MapContainer
-        center={center}
+        center={userLocation ?? center}
         zoom={zoom}
         style={{ width: '100%', height: '100%' }}
         zoomControl={false}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          subdomains="abcd"
+          maxZoom={20}
         />
+
+        {/* Fly to user on first fix */}
+        <RecenterOnUser coords={userLocation} />
+
+        {/* User's live location dot */}
+        {userLocation && (
+          <Marker position={userLocation} icon={createUserLocationIcon()}>
+            <Popup>
+              <div className="text-xs font-medium">📍 You are here</div>
+            </Popup>
+          </Marker>
+        )}
+
+        {/* Item markers */}
         {markers.map((m) => (
           <Marker
             key={m.id}
@@ -130,6 +187,8 @@ export default function LeafletMap({
             </Popup>
           </Marker>
         ))}
+
+        {/* Cluster markers */}
         {clusterMarkers.map((c, i) => (
           <Marker
             key={`cluster-${i}`}
@@ -137,7 +196,8 @@ export default function LeafletMap({
             icon={createClusterIcon(c.count)}
           />
         ))}
-        <RecenterControl />
+
+        <RecenterControl userCoords={userLocation} />
       </MapContainer>
     </div>
   );

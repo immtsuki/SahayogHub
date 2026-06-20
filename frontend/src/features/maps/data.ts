@@ -1,5 +1,18 @@
 import type { NearbyItem, MapMarker } from './types';
 
+// Lat/lng offsets relative to the user's position (in degrees).
+// ~0.001° ≈ 110 m, so these spread items within ~1–2 km.
+// Entries 0–3 correspond to mapMarkers; entries 4–6 are cluster positions.
+export const clusterOffsets = [
+  { dlat:  0.005, dlng:  0.002 },  // m1
+  { dlat: -0.008, dlng: -0.004 },  // m2
+  { dlat:  0.001, dlng:  0.010 },  // m3
+  { dlat: -0.018, dlng: -0.010 },  // m4
+  { dlat:  0.015, dlng:  0.007, count: 12 },  // cluster 1
+  { dlat: -0.018, dlng: -0.015, count: 8  },  // cluster 2
+  { dlat: -0.009, dlng:  0.015, count: 5  },  // cluster 3
+];
+
 export const nearbyItems: NearbyItem[] = [
   {
     id: 'n1',

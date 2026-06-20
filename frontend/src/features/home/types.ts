@@ -4,6 +4,9 @@ export interface FeedItem {
   id: string;
   user: User;
   status: ItemStatus;
+  title: string;
+  description: string;
+  date: string;
   image: string;
   location: string;
   distance: string;

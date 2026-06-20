@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom';
+import { HomeIcon, SearchIcon, MapIcon, NotificationIcon, CameraIcon } from './NavIcons';
 
 const navLinks = [
-  { to: '/',          label: 'Home'      },
-  { to: '/search',    label: 'Search'    },
-  { to: '/maps',      label: 'Maps'      },
-  { to: '/community', label: 'Community' },
+  { to: '/',              label: 'Home',          Icon: HomeIcon         },
+  { to: '/search',        label: 'Search',        Icon: SearchIcon       },
+  { to: '/maps',          label: 'Maps',          Icon: MapIcon          },
+  { to: '/notifications', label: 'Notifications', Icon: NotificationIcon },
 ];
 
 export default function NavbarDesktop() {
@@ -14,41 +15,56 @@ export default function NavbarDesktop() {
         <span className="text-lg leading-none">📍</span>
         <span className="tracking-tight">Sahayog Hub</span>
       </div>
+
       <nav className="flex items-center gap-1">
-        {navLinks.map(({ to, label }) => (
+        {navLinks.map(({ to, label, Icon }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) =>
-              `px-3.5 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
+              `flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors duration-150 ${
                 isActive
                   ? 'text-blue-500 bg-blue-50'
                   : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
               }`
             }
           >
-            {label}
+            {({ isActive }) => (
+              <>
+                <Icon active={isActive} />
+                {label}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
+
       <div className="flex items-center gap-1 shrink-0">
-        <button className="relative p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Notifications">
-          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true" className="text-gray-500">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-          </svg>
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-        </button>
-        <button className="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Messages">
-          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true" className="text-gray-500">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-        </button>
-        <img
-          src="https://i.pravatar.cc/36?img=10"
-          alt="Profile"
-          className="w-8 h-8 rounded-full object-cover border-2 border-gray-100 ml-1"
-        />
+        <NavLink
+          to="/report"
+          className="flex items-center gap-1.5 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-sm font-semibold px-3.5 py-1.5 rounded-xl transition-colors duration-150 mr-1"
+          aria-label="Create new report"
+        >
+          {({ isActive }) => (
+            <>
+              <CameraIcon active={isActive} />
+              Report
+            </>
+          )}
+        </NavLink>
+        <NavLink
+          to="/profile"
+          className={({ isActive }) =>
+            `ml-1 rounded-full ring-2 transition-all ${isActive ? 'ring-blue-500' : 'ring-gray-100 hover:ring-blue-300'}`
+          }
+          aria-label="Profile"
+        >
+          <img
+            src="https://i.pravatar.cc/36?img=10"
+            alt="Profile"
+            className="w-8 h-8 rounded-full object-cover block"
+          />
+        </NavLink>
       </div>
     </header>
   );

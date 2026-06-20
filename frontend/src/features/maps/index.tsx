@@ -1,43 +1,76 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import FilterTabs from '../../shared/components/FilterTabs';
 import NearbyItemsList from './components/NearbyItemsList';
 import MapBottomCard from './components/MapBottomCard';
 import MapSearchBar from './components/MapSearchBar';
 import LeafletMap from './components/LeafletMap';
-import { mapMarkers, nearbyItems } from './data';
+import { mapMarkers, nearbyItems, clusterOffsets } from './data';
 import type { MapMarker, NearbyItem } from './types';
+import { useGeolocation } from '../../shared/hooks/useGeolocation';
 
 const MAP_FILTER_TABS = ['All', 'Lost', 'Found', 'Today'];
 
-const clusterMarkers = [
-  { lat: 40.795, lng: -73.963, count: 12 },
-  { lat: 40.762, lng: -73.985, count: 8  },
-  { lat: 40.771, lng: -73.955, count: 5  },
-];
+// Fallback centre when geolocation is unavailable
+const FALLBACK: [number, number] = [40.78, -73.97];
 
 export default function MapsPage() {
   const [activeFilter, setActiveFilter] = useState('All');
-  const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(mapMarkers[0]);
+  const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const { coords: userLocation, loading: geoLoading, error: geoError } = useGeolocation();
 
-  const filteredMarkers = mapMarkers.filter((m) => {
+  const centre = userLocation ?? FALLBACK;
+
+  // Rebase all markers relative to the user's actual position
+  const rebasedMarkers = useMemo<MapMarker[]>(() =>
+    mapMarkers.map((m, i) => ({
+      ...m,
+      lat: centre[0] + (clusterOffsets[i]?.dlat ?? 0),
+      lng: centre[1] + (clusterOffsets[i]?.dlng ?? 0),
+    })),
+    [centre],
+  );
+
+  const rebasedClusters = useMemo(() =>
+    clusterOffsets.slice(mapMarkers.length).map((o) => ({
+      lat: centre[0] + o.dlat,
+      lng: centre[1] + o.dlng,
+      count: o.count ?? 0,
+    })),
+    [centre],
+  );
+
+  const filteredMarkers = rebasedMarkers.filter((m) => {
     if (activeFilter === 'Lost')  return m.status === 'LOST';
     if (activeFilter === 'Found') return m.status === 'FOUND';
     return true;
   });
 
   const handleNearbySelect = (item: NearbyItem) => {
-    const marker = mapMarkers.find((m) => m.id === `m${item.id.replace('n', '')}`);
+    const marker = rebasedMarkers.find((m) => m.id === `m${item.id.replace('n', '')}`);
     if (marker) setSelectedMarker(marker);
   };
 
   return (
     <div className="relative w-full h-full overflow-hidden">
+      {/* Geo permission / loading banner */}
+      {geoLoading && (
+        <div className="absolute top-0 inset-x-0 z-[1100] flex items-center justify-center gap-2 bg-blue-500 text-white text-xs py-1.5 font-medium">
+          <span className="animate-spin">⏳</span> Getting your location…
+        </div>
+      )}
+      {geoError && !geoLoading && (
+        <div className="absolute top-0 inset-x-0 z-[1100] flex items-center justify-center gap-2 bg-amber-500 text-white text-xs py-1.5 font-medium">
+          ⚠️ Location unavailable — showing default area
+        </div>
+      )}
+
       <div className="absolute inset-0">
         <LeafletMap
           markers={filteredMarkers}
-          clusterMarkers={clusterMarkers}
+          clusterMarkers={rebasedClusters}
           onMarkerClick={setSelectedMarker}
+          userLocation={userLocation}
         />
       </div>
       <div className="absolute top-3 left-3 right-3 md:left-1/2 md:-translate-x-1/2 md:w-[460px] z-[1000]">
