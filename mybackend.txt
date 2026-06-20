@@ -1,0 +1,761 @@
+## 🧠 Detailed Backend Architecture
+
+SahayogHub backend is designed as a secure, scalable, and modular civic-tech system built using **Django**, **Django REST Framework**, and **PostgreSQL**. The backend powers all core services including Lost & Found, Missing Persons, Vehicle Search, Emergency SOS, Fundraising, Road Hazard Reporting, Corruption Reporting, and secure identity/document-based verification.
+
+The system is divided into two major service modes:
+
+```txt
+1. Find & Report System
+   → Used to find people, vehicles, pets, documents, and lost objects.
+
+2. Secure Document & Identity System
+   → Used to store sensitive identity references such as citizenship number,
+     passport number, license number, and verified ownership details.
+```
+
+---
+
+## 🔍 1. Find & Report System
+
+The Find & Report system is the public-facing discovery module of SahayogHub. It allows citizens to submit and search reports related to:
+
+* Missing persons
+* Lost or found vehicles
+* Lost pets
+* Lost documents
+* Found objects
+* Road hazards
+* Emergency incidents
+* Suspicious or corruption-related reports
+
+### Main Purpose
+
+The goal of this module is to make community reporting searchable, organized, and actionable.
+
+```txt
+Citizen submits report
+        ↓
+Backend validates data
+        ↓
+Images and details are stored
+        ↓
+Matching engine checks similar records
+        ↓
+Possible matches are ranked
+        ↓
+Users and authorities are notified
+```
+
+### Supported Report Types
+
+| Report Type       | Example                                      |
+| ----------------- | -------------------------------------------- |
+| Missing Person    | Missing child, elderly person, family member |
+| Vehicle           | Lost bike, stolen scooter, abandoned vehicle |
+| Pet               | Lost dog, found cat                          |
+| Object            | Wallet, bag, mobile phone, documents         |
+| Document          | Passport, license, citizenship card          |
+| Road Hazard       | Broken road, landslide, blocked drainage     |
+| Emergency         | SOS request, accident, urgent help           |
+| Corruption Report | Bribery, misuse of public service            |
+
+---
+
+## 🧾 2. Secure Document & Identity System
+
+This module stores sensitive identity-related information in a protected way. It is not fully public and should only be accessible to verified users, admins, or authorized personnel.
+
+Examples of stored document data:
+
+* Citizenship number
+* Passport number
+* Driving license number
+* Vehicle number plate
+* National ID number
+* Document owner name
+* Date of birth
+* Issued district
+* Contact number
+* Verification status
+
+### Important Security Rule
+
+Sensitive numbers such as citizenship number, passport number, and license number should **never be stored as plain public data**.
+
+They should be:
+
+* Encrypted in the database
+* Hidden from normal users
+* Accessible only through permission-based roles
+* Logged whenever viewed or updated
+* Used for matching and verification, not public display
+
+Example:
+
+```txt
+Public user sees:
+Citizenship: ********1234
+
+Admin or verified authority sees:
+Full number only after permission check
+```
+
+---
+
+## 🏗️ Backend Modules
+
+The Django backend should be divided into multiple apps for clean structure.
+
+```txt
+backend/
+│
+├── accounts/
+│   ├── User registration
+│   ├── Login / logout
+│   ├── JWT authentication
+│   ├── Role-based permissions
+│
+├── reports/
+│   ├── Common report model
+│   ├── Missing person reports
+│   ├── Vehicle reports
+│   ├── Lost and found reports
+│   ├── Road hazard reports
+│
+├── documents/
+│   ├── Passport records
+│   ├── Citizenship records
+│   ├── License records
+│   ├── Secure identity storage
+│
+├── matching/
+│   ├── Text matching
+│   ├── Image similarity matching
+│   ├── Location-based matching
+│   ├── Most common match ranking
+│
+├── notifications/
+│   ├── Email alerts
+│   ├── SMS alerts
+│   ├── In-app notifications
+│
+
+```
+
+---
+
+## 🗄️ Database Design
+
+### User Model
+
+Stores citizen, admin, volunteer, and authority users.
+
+```txt
+User
+- id
+- full_name
+- email
+- phone_number
+- password_hash
+- role
+- address
+- district
+- profile_image
+- is_verified
+- created_at
+- updated_at
+```
+
+### Roles
+
+person who found it 
+person who is finding 
+admin who is manging the website
+
+Each role has different permissions.
+
+| Role        | Permission                                           |
+| ----------- | ---------------------------------------------------- |
+| Citizen     | Create reports, search public reports, contact owner |
+| Volunteer   | Help verify reports, update status                   |
+| Authority   | Access sensitive emergency/missing-person data       |
+| Admin       | Approve, reject, edit, and moderate reports          |
+| Super Admin | Full system control                                  |
+
+---
+
+## 📌 Common Report Model
+
+Instead of creating completely separate logic for every report, the backend should use a common report structure.
+
+```txt
+Report
+- id
+- report_type
+- title
+- description
+- category
+- status
+- priority
+- reporter
+- location_name
+- latitude
+- longitude
+- district
+- municipality
+- ward_number
+- contact_name
+- contact_phone
+- image
+- additional_images
+- date_reported
+- date_lost_or_found
+- is_verified
+- created_at
+- updated_at
+```
+
+### Report Status
+
+```txt
+Pending
+Approved
+Rejected
+Under Review
+Resolved
+Closed
+```
+
+---
+
+## 🧑 Missing Person Model
+
+```txt
+MissingPerson
+- id
+- report
+- full_name
+- age
+- gender
+- height
+- complexion
+- clothing_description
+- last_seen_location
+- last_seen_date
+- guardian_name
+- guardian_contact
+- police_case_number
+- medical_condition
+- photo
+- status
+```
+
+### Matching Logic for Missing Persons
+
+The backend should compare new missing-person reports with existing found-person or sighting reports using:
+
+* Name similarity
+* Age range
+* Gender
+* Last seen location
+* District
+* Photo similarity
+* Description similarity
+* Date range
+
+The system should calculate a match score.
+
+```txt
+Match Score = 
+Name Similarity +
+Age Similarity +
+Location Similarity +
+Image Similarity +
+Description Similarity
+```
+
+Example:
+
+```txt
+80% or above  → Strong Match
+60% to 79%    → Possible Match
+Below 60%     → Weak Match
+```
+
+---
+
+## 🚗 Vehicle Report Model
+
+```txt
+VehicleReport
+- id
+- report
+- vehicle_type
+- brand
+- model
+- color
+- number_plate
+- engine_number
+- chassis_number
+- last_seen_location
+- owner_name
+- owner_contact
+- police_report_number
+```
+
+### Vehicle Matching
+
+Vehicle reports should match using:
+
+* Number plate
+* Vehicle type
+* Brand
+* Model
+* Color
+* Location
+* Engine number
+* Chassis number
+
+Exact matches like number plate, engine number, or chassis number should receive the highest priority.
+
+---
+
+## 🎒 Object / Lost & Found Model
+
+```txt
+LostFoundItem
+- id
+- report
+- item_type
+- item_name
+- brand
+- color
+- unique_identifier
+- found_or_lost
+- location
+- image
+- owner_claim_status
+```
+
+### Object Matching
+
+When a user reports a lost or found object, the backend should compare it with existing records.
+
+Matching factors:
+
+* Item category
+* Item name
+* Color
+* Brand
+* Location
+* Date
+* Uploaded image
+* Unique identifier, if available
+
+Example:
+
+```txt
+Lost black wallet in Kathmandu
+        ↓
+System searches:
+Found wallets + black color + nearby location + recent date
+        ↓
+Possible matches are shown
+```
+
+---
+
+## 🛂 Secure Document Model
+
+```txt
+IdentityDocument
+- id
+- user
+- document_type
+- document_number_encrypted
+- document_number_hash
+- full_name
+- date_of_birth
+- issued_district
+- issued_date
+- expiry_date
+- document_image
+- verification_status
+- created_at
+- updated_at
+```
+
+### Document Types
+
+```txt
+Citizenship
+Passport
+Driving License
+National ID
+Vehicle Bluebook
+Student ID
+Other
+```
+
+### Why Use Both Encryption and Hashing?
+
+Encrypted value is used when authorized users need to view the original number.
+
+Hash value is used for matching without exposing the real number.
+
+```txt
+Passport number: 123456789
+Encrypted value: unreadable secure text
+Hash value: fixed fingerprint used for searching
+```
+
+This allows the system to check whether a document already exists without revealing the original number.
+
+---
+
+## 🧠 Matching Engine
+
+The Matching Engine is one of the most important parts of SahayogHub. It helps detect the most common or most likely match between reports.
+
+### Matching Sources
+
+```txt
+Text data
+Image data
+Location data
+Date and time
+Document numbers
+User-submitted descriptions
+Category tags
+```
+
+### Matching Process
+
+```txt
+1. User submits a new report.
+2. Backend normalizes the input.
+3. System searches similar reports.
+4. Matching score is calculated.
+5. Top matching records are ranked.
+6. User receives possible matches.
+7. Admin or authority verifies the final match.
+```
+
+### Example Matching Score
+
+```txt
+Category match       = 20 points
+Location match       = 20 points
+Date range match     = 15 points
+Text similarity      = 20 points
+Image similarity     = 20 points
+Verified document    = 25 points
+```
+
+The final score helps decide the strength of the match.
+
+```txt
+90+ points  → Very strong match
+70-89       → Strong match
+50-69       → Possible match
+Below 50    → Low confidence match
+```
+
+---
+
+## 🔐 Security Architecture
+
+Since SahayogHub handles sensitive public and personal data, security is a core backend requirement.
+
+### Authentication
+
+The backend should use:
+
+* JWT access token
+* JWT refresh token
+* Password hashing
+* Email or phone verification
+* Optional two-factor authentication for admins
+
+### Authorization
+
+The backend should apply role-based access control.
+
+```txt
+Citizen can create and view public reports.
+Admin can approve and moderate reports.
+Authority can access verified emergency and missing-person data.
+Super Admin can manage system-wide settings.
+```
+
+### Sensitive Data Protection
+
+The backend must protect:
+
+* Citizenship numbers
+* Passport numbers
+* License numbers
+* Phone numbers
+* Home addresses
+* Emergency location data
+* Missing person details
+
+Security techniques:
+
+* Field-level encryption
+* Hashed document numbers
+* Permission checks
+* Audit logs
+* Secure file storage
+* Private media URLs
+* Rate limiting
+* Input validation
+
+---
+
+## 🔔 Notification System
+
+The notification system alerts users when important events happen.
+
+### Notification Types
+
+```txt
+Possible match found
+Report approved
+Report rejected
+Emergency SOS received
+Missing person update
+Document verification update
+Fundraiser status update
+```
+
+### Channels
+
+```txt
+In-app notification
+Email
+SMS
+Push notification
+```
+
+---
+
+## 🚨 Emergency SOS Flow
+
+```txt
+Citizen presses SOS button
+        ↓
+Backend receives live location and emergency type
+        ↓
+Emergency record is created
+        ↓
+Nearby volunteers/admins/authorities are notified
+        ↓
+Status is updated as pending, responding, or resolved
+```
+
+### EmergencySOS Model
+
+```txt
+EmergencySOS
+- id
+- user
+- emergency_type
+- description
+- latitude
+- longitude
+- address
+- contact_phone
+- status
+- assigned_authority
+- created_at
+- resolved_at
+```
+
+---
+
+## 🧑‍⚖️ Admin and Moderation System
+
+Admins should verify reports before they become widely visible.
+
+### Admin Actions
+
+* Approve report
+* Reject fake report
+* Mark as resolved
+* Merge duplicate reports
+* Verify document ownership
+* View audit logs
+* Assign emergency case
+* Block suspicious users
+
+---
+
+## 📡 API Architecture
+
+The backend should expose REST APIs.
+
+### Authentication APIs
+
+```txt
+POST /api/auth/register/
+POST /api/auth/login/
+POST /api/auth/logout/
+POST /api/auth/token/refresh/
+GET  /api/auth/profile/
+PATCH /api/auth/profile/update/
+```
+
+### Report APIs
+
+```txt
+POST /api/reports/
+GET  /api/reports/
+GET  /api/reports/{id}/
+PATCH /api/reports/{id}/
+DELETE /api/reports/{id}/
+POST /api/reports/{id}/mark-resolved/
+```
+
+### Missing Person APIs
+
+```txt
+POST /api/missing-persons/
+GET  /api/missing-persons/
+GET  /api/missing-persons/{id}/
+POST /api/missing-persons/{id}/possible-match/
+```
+
+### Vehicle APIs
+
+```txt
+POST /api/vehicles/
+GET  /api/vehicles/
+GET  /api/vehicles/{id}/
+GET  /api/vehicles/search/?number_plate=BA-12-PA-1234
+```
+
+### Lost & Found APIs
+
+```txt
+POST /api/lost-found/
+GET  /api/lost-found/
+GET  /api/lost-found/{id}/
+POST /api/lost-found/{id}/claim/
+```
+
+### Document APIs
+
+```txt
+POST /api/documents/
+GET  /api/documents/my/
+GET  /api/documents/{id}/
+PATCH /api/documents/{id}/verify/
+POST /api/documents/check-duplicate/
+```
+
+### Matching APIs
+
+```txt
+POST /api/matching/find/
+GET  /api/matching/report/{report_id}/
+POST /api/matching/confirm/{match_id}/
+```
+
+### Emergency APIs
+
+```txt
+POST /api/sos/
+GET  /api/sos/
+GET  /api/sos/{id}/
+PATCH /api/sos/{id}/status/
+```
+
+---
+
+## ⚙️ Background Tasks
+
+Some tasks should not run directly inside the request-response cycle. They should run in the background using Celery and Redis.
+
+Background jobs:
+
+* Image processing
+* Match score calculation
+* Sending email/SMS alerts
+* Generating notifications
+* Cleaning duplicate reports
+* Report expiration reminders
+* Emergency escalation
+
+```txt
+Django API
+   ↓
+Celery Task Queue
+   ↓
+Redis Broker
+   ↓
+Worker processes matching, alerts, and image analysis
+```
+
+---
+
+## 🖼️ File and Image Storage
+
+Uploaded files should be stored securely.
+
+Examples:
+
+* Missing person photos
+* Lost item photos
+* Vehicle photos
+* Passport image
+* License image
+* Citizenship image
+* Road hazard image
+* Evidence files
+
+Recommended storage:
+
+```txt
+Development: Local media folder
+Production: Cloud storage such as AWS S3, Cloudinary, or similar
+```
+
+Private files such as citizenship, passport, and license images should not be publicly accessible.
+
+---
+
+## 🧪 Backend Testing
+
+The backend should include tests for:
+
+* User registration and login
+* Report creation
+* Missing person creation
+* Vehicle search
+* Document encryption
+* Matching score calculation
+* Role-based permissions
+* Admin approval flow
+* Emergency SOS creation
+* Notification generation
+
+---
+
+## ✅ Backend Goal
+
+The backend of SahayogHub is not just a data storage system. It is the intelligence layer of the platform.
+
+It should:
+
+* Store civic reports securely
+* Help citizens find people, vehicles, pets, and lost objects
+* Protect sensitive document information
+* Match similar records automatically
+* Notify users and authorities
+* Support admin verification
+* Maintain transparency and accountability
+
+```txt
+Report → Verify → Match → Notify → Resolve
+```
