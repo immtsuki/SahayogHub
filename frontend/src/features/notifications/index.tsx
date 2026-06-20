@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { NOTIFICATIONS } from './data';
 import type { Notification, NotifStatus } from './data';
+import { useReports } from '../../shared/context/ReportContext';
+import type { SubmittedReport } from '../../shared/context/ReportContext';
 
 // ── Status config ─────────────────────────────────────────────
 const LOST_OPTIONS: { value: NotifStatus; label: string; dot: string }[] = [
@@ -118,10 +120,54 @@ function NotifCard({
   );
 }
 
+// ── Submitted report card ─────────────────────────────────────
+function SubmittedReportCard({ report }: { report: SubmittedReport }) {
+  const isLost = report.category === 'lost';
+  const img = report.images[0];
+
+  return (
+    <div className="bg-white rounded-2xl border-2 border-blue-200 shadow-sm">
+      <div className="flex items-center gap-3 px-4 py-3">
+        {/* Thumbnail or placeholder */}
+        <div className="relative shrink-0">
+          {img ? (
+            <img src={img} alt={report.title} className="w-11 h-11 rounded-xl object-cover" />
+          ) : (
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg ${isLost ? 'bg-red-50' : 'bg-green-50'}`}>
+              {isLost ? '🔍' : '✅'}
+            </div>
+          )}
+          {/* New badge */}
+          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-blue-500 rounded-full border-2 border-white" />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isLost ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+              {isLost ? 'LOST' : 'FOUND'}
+            </span>
+            <span className="text-[10px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+              Just submitted
+            </span>
+          </div>
+          <p className="text-sm font-semibold text-gray-900 truncate">{report.title}</p>
+          <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{report.description}</p>
+          <p className="text-xs text-gray-400 mt-0.5 truncate">{report.location} / {report.category_label}</p>
+        </div>
+
+        {/* Time */}
+        <span className="text-[11px] text-gray-400 shrink-0">{report.timeAgo}</span>
+      </div>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState(NOTIFICATIONS);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const { reports: submittedReports } = useReports();
 
   function updateStatus(id: string, status: NotifStatus) {
     setNotifications((prev) =>
@@ -173,14 +219,27 @@ export default function NotificationsPage() {
           </div>
         </div>
 
-        {/* List */}
+        {/* Submitted reports — shown at top */}
+        {submittedReports.length > 0 && (
+          <div className="mb-4">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Your Submissions</p>
+            <div className="flex flex-col gap-2">
+              {submittedReports.map((r) => (
+                <SubmittedReportCard key={r.id} report={r} />
+              ))}
+            </div>
+            {visible.length > 0 && <div className="border-t border-gray-100 mt-4" />}
+          </div>
+        )}
+
+        {/* System notifications */}
         {visible.length > 0 ? (
           <div className="flex flex-col gap-2">
             {visible.map((n) => (
               <NotifCard key={n.id} notif={n} onStatusChange={updateStatus} />
             ))}
           </div>
-        ) : (
+        ) : submittedReports.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400 gap-3">
             <svg width="36" height="36" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
@@ -188,7 +247,7 @@ export default function NotificationsPage() {
             </svg>
             <p className="text-sm font-medium">No notifications</p>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

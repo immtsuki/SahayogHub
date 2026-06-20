@@ -73,14 +73,14 @@ export default function MapsPage() {
           userLocation={userLocation}
         />
       </div>
-      <div className="absolute top-3 left-3 right-3 md:left-1/2 md:-translate-x-1/2 md:w-[460px] z-[1000]">
+      <div className="absolute top-2 left-3 right-3 md:left-1/2 md:-translate-x-1/2 md:w-[460px] z-[1000]">
         <MapSearchBar
           value={searchQuery}
           onChange={setSearchQuery}
           placeholder="Search lost items, places, or reports"
         />
       </div>
-      <div className="absolute top-[3.25rem] left-3 right-3 z-[1000]">
+      <div className="absolute top-[3rem] left-3 right-3 z-[1000]">
         <FilterTabs
           tabs={MAP_FILTER_TABS}
           active={activeFilter}
@@ -88,7 +88,7 @@ export default function MapsPage() {
           scroll
         />
       </div>
-      <div className="hidden md:block absolute top-4 left-4 z-[1000]">
+      <div className="hidden md:block absolute top-[6.5rem] left-4 z-[1000]">
         <NearbyItemsList items={nearbyItems} onSelect={handleNearbySelect} />
       </div>
       {selectedMarker && (

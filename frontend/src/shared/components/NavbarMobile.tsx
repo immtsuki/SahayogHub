@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
-import { HomeIcon, SearchIcon, MapIcon, NotificationIcon, CameraIcon } from './NavIcons';
+import { HomeIcon, SearchIcon, MapIcon, NotificationIcon, CameraIcon, ProfileIcon } from './NavIcons';
+import { useAuth } from '../context/AuthContext';
 
 const leftLinks = [
   { to: '/',       label: 'Home',   Icon: HomeIcon   },
@@ -11,6 +12,7 @@ const rightLinks = [
 ];
 
 export default function NavbarMobile() {
+  const { user } = useAuth();
   return (
     <nav
       className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100"
@@ -76,6 +78,41 @@ export default function NavbarMobile() {
             )}
           </NavLink>
         ))}
+
+        {/* Profile or Login */}
+        {user ? (
+          <NavLink
+            to="/profile"
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-0.5 px-4 py-1 text-[11px] font-medium transition-colors ${
+                isActive ? 'text-blue-500' : 'text-gray-400'
+              }`
+            }
+          >
+            {() => (
+              <>
+                <img src={user.avatar} alt={user.name} className="w-6 h-6 rounded-full object-cover" />
+                <span>Profile</span>
+              </>
+            )}
+          </NavLink>
+        ) : (
+          <NavLink
+            to="/login"
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-0.5 px-4 py-1 text-[11px] font-medium transition-colors ${
+                isActive ? 'text-blue-500' : 'text-gray-400'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <ProfileIcon active={isActive} />
+                <span>Log In</span>
+              </>
+            )}
+          </NavLink>
+        )}
       </div>
     </nav>
   );

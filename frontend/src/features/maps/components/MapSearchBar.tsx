@@ -26,7 +26,7 @@ export default function MapSearchBar({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="
-          w-full pl-10 pr-11 py-2.5
+          w-full pl-10 pr-11 py-1.5
           bg-white rounded-full
           shadow-md border border-gray-100
           text-sm font-normal text-gray-800 placeholder-gray-400
