@@ -1,0 +1,12 @@
+Django==5.0.6
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.4.0
+python-decouple==3.8
+drf-spectacular==0.27.2
+
+# Uncomment when switching to PostgreSQL:
+# psycopg[binary]==3.3.4
+
+# Pillow — needed for profile photo ImageField.
+# Install once Python 3.14 wheels are available: pip install pillow --pre
