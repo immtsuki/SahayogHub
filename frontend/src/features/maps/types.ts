@@ -17,5 +17,9 @@ export interface MapMarker {
   distance: string;
   postedAgo: string;
   image: string;
+  date?: string;
+  location?: string;
+  description?: string;
+  user?: { name: string; avatar: string; email?: string; phone?: string };
   cluster?: number;
 }

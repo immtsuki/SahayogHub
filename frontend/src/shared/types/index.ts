@@ -5,4 +5,6 @@ export interface User {
   name: string;
   avatar: string;
   trustScore?: number;
+  email?: string;
+  phone?: string;
 }

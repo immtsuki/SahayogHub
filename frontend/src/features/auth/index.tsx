@@ -31,7 +31,7 @@ export default function AuthPage() {
 
     // Demo auth — in production this would call an API
     const displayName = mode === 'register' ? name : email.split('@')[0];
-    login(displayName, `https://i.pravatar.cc/36?u=${email}`);
+    login(displayName, `https://i.pravatar.cc/36?u=${email}`, email);
     navigate('/');
   }
 

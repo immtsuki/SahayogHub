@@ -1,17 +1,9 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { useGeolocation } from '../../../shared/hooks/useGeolocation';
+import { useAuth } from '../../../shared/context/AuthContext';
+import LocationPreviewMap from '../../../shared/components/LocationPreviewMap';
 import LocationPickerModal from './LocationPickerModal';
 import type { PickedLocation } from './LocationPickerModal';
-
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon   from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
-delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
-L.Icon.Default.mergeOptions({ iconUrl: markerIcon, iconRetinaUrl: markerIcon2x, shadowUrl: markerShadow });
 
 const CATEGORIES = ['Bags & Luggage', 'Electronics', 'Clothing', 'Accessories', 'Keys', 'Wallet', 'Other'];
 
@@ -21,6 +13,9 @@ export interface FormData {
   itemName: string;
   category: string;
   description: string;
+  contactName: string;
+  email: string;
+  phone: string;
   location: PickedLocation | null;
 }
 
@@ -29,11 +24,15 @@ interface EditDetailsFormProps {
 }
 
 export default function EditDetailsForm({ onDataChange }: EditDetailsFormProps) {
+  const { user } = useAuth();
   const [itemName,     setItemName]     = useState('Black Nike Backpack');
   const [category,     setCategory]     = useState('Bags & Luggage');
   const [description,  setDescription]  = useState(
     'Black Nike branded backpack with multiple compartments and padded straps. Last seen with a small keychain attached to the front zipper.'
   );
+  const [contactName,  setContactName]  = useState(user?.name ?? 'Jordan Blake');
+  const [email,        setEmail]        = useState(user?.email ?? 'jordan.blake@email.com');
+  const [phone,        setPhone]        = useState(user?.phone ?? '');
   const [location,     setLocation]     = useState<PickedLocation | null>(null);
   const [pickerOpen,   setPickerOpen]   = useState(false);
 
@@ -42,8 +41,8 @@ export default function EditDetailsForm({ onDataChange }: EditDetailsFormProps) 
 
   // Notify parent whenever form data changes
   useEffect(() => {
-    onDataChange?.({ itemName, category, description, location });
-  }, [itemName, category, description, location]);
+    onDataChange?.({ itemName, category, description, contactName, email, phone, location });
+  }, [itemName, category, description, contactName, email, phone, location, onDataChange]);
 
   function handleUseCurrentLocation() {
     if (!coords) return;
@@ -86,8 +85,39 @@ export default function EditDetailsForm({ onDataChange }: EditDetailsFormProps) 
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700">Description</label>
+          <div className="flex items-center gap-2 flex-wrap">
+            <label className="text-sm font-medium text-gray-700">Description</label>
+            <span className="text-xs text-gray-400 font-normal italic">Please provide details of your lost item</span>
+          </div>
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} className={`${inputCls} resize-y`} />
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">Contact Details</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Shown on the detail card so people can reach you.</p>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-700">User Name</label>
+            <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)} className={inputCls} />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-700">Gmail / Email</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-700">Contact Number</label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Optional"
+              className={inputCls}
+            />
+          </div>
         </div>
 
         {/* ── Location ── */}
@@ -112,24 +142,7 @@ export default function EditDetailsForm({ onDataChange }: EditDetailsFormProps) 
 
               {/* Mini map preview — key forces remount on location change so map fills new size */}
               <div className="rounded-xl overflow-hidden border border-gray-200" style={{ height: '220px' }}>
-                <MapContainer
-                  key={`${location.lat}-${location.lng}`}
-                  center={[location.lat, location.lng]}
-                  zoom={15}
-                  style={{ width: '100%', height: '220px' }}
-                  zoomControl={false}
-                  dragging={false}
-                  scrollWheelZoom={false}
-                  doubleClickZoom={false}
-                  keyboard={false}
-                  attributionControl={false}
-                >
-                  <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                    subdomains="abcd"
-                  />
-                  <Marker position={[location.lat, location.lng]} />
-                </MapContainer>
+                <LocationPreviewMap lat={location.lat} lng={location.lng} />
               </div>
             </div>
           ) : (

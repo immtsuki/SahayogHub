@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EditDetailsForm from './components/EditDetailsForm';
 import type { FormData } from './components/EditDetailsForm';
@@ -6,8 +7,9 @@ import CameraModal from './components/CameraModal';
 import { useReports } from '../../shared/context/ReportContext';
 import type { SubmittedReport } from '../../shared/context/ReportContext';
 
-type ReportType = 'lost' | 'found';
-type Step = 'select' | 'lost-upload' | 'found-upload' | 'analysis';
+type ReportType    = 'lost' | 'found';
+type ReportCategory = 'item' | 'human' | 'document';
+type Step = 'category' | 'select' | 'lost-upload' | 'found-upload' | 'analysis';
 
 // ── Shared helpers ─────────────────────────────────────────────
 function BackButton({ onClick }: { onClick: () => void }) {
@@ -22,15 +24,89 @@ function BackButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-// ── Step 0 — Select Lost / Found ───────────────────────────────
-function SelectTypePage({ onSelect }: { onSelect: (t: ReportType) => void }) {
+// ── Step 0 — Pick category: Item / Human / Document ───────────
+const CATEGORIES: { key: ReportCategory; label: string; sub: string; color: string; hover: string; icon: ReactNode }[] = [
+  {
+    key: 'item', label: 'Item', sub: 'Lost or found object',
+    color: 'border-gray-100 hover:border-blue-400',
+    hover: 'bg-blue-50 group-hover:bg-blue-100',
+    icon: (
+      <svg width="28" height="28" fill="none" stroke="#3b82f6" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <path d="M16 10a4 4 0 0 1-8 0"/>
+      </svg>
+    ),
+  },
+  {
+    key: 'human', label: 'Person', sub: 'Missing or found person',
+    color: 'border-gray-100 hover:border-purple-400',
+    hover: 'bg-purple-50 group-hover:bg-purple-100',
+    icon: (
+      <svg width="28" height="28" fill="none" stroke="#a855f7" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+    ),
+  },
+  {
+    key: 'document', label: 'Document', sub: 'ID, passport, certificate',
+    color: 'border-gray-100 hover:border-amber-400',
+    hover: 'bg-amber-50 group-hover:bg-amber-100',
+    icon: (
+      <svg width="28" height="28" fill="none" stroke="#f59e0b" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+    ),
+  },
+];
+
+function SelectCategoryPage({ onSelect }: { onSelect: (c: ReportCategory) => void }) {
+  return (
+    <div className="bg-gray-50 px-4 py-8 flex flex-col items-center">
+      <div className="w-full max-w-lg flex flex-col gap-5">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900">Create a Report</h1>
+          <p className="text-sm text-gray-400 mt-1.5">What type of report?</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {CATEGORIES.map(({ key, label, sub, color, hover, icon }) => (
+            <button
+              key={key}
+              onClick={() => onSelect(key)}
+              className={`group flex items-center sm:flex-col sm:items-center sm:justify-center gap-4 bg-white border-2 ${color} rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-sm hover:shadow-md transition-all cursor-pointer text-left sm:text-center`}
+            >
+              <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl ${hover} flex items-center justify-center transition-colors shrink-0`}>
+                {icon}
+              </div>
+              <div className="flex-1 sm:flex-none sm:text-center">
+                <p className="font-bold text-gray-900 text-base">{label}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Step 1 — Select Lost / Found ───────────────────────────────
+function SelectTypePage({ onSelect, onBack }: { onSelect: (t: ReportType) => void; onBack: () => void }) {
   return (
     <div className="bg-gray-50 px-4 py-8 flex flex-col items-center">
       <div className="w-full max-w-lg flex flex-col gap-5">
 
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Create a Report</h1>
-          <p className="text-sm text-gray-400 mt-1.5">What are you reporting?</p>
+        <div className="flex items-center gap-3">
+          <BackButton onClick={onBack} />
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Lost or Found?</h1>
+            <p className="text-sm text-gray-400 mt-0.5">Choose the situation</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -79,7 +155,7 @@ function SelectTypePage({ onSelect }: { onSelect: (t: ReportType) => void }) {
   );
 }
 
-// ── Step 1A — Lost: single image upload ────────────────────────
+// ── Step 1A — Lost: multi-photo upload ────────────────────────
 function LostUploadPage({
   onNext,
   onBack,
@@ -87,15 +163,42 @@ function LostUploadPage({
   onNext: (img: string | null) => void;
   onBack: () => void;
 }) {
-  const [dragging,    setDragging]    = useState(false);
-  const [preview,     setPreview]     = useState<string | null>(null);
-  const [cameraOpen,  setCameraOpen]  = useState(false);
+  const [photos,       setPhotos]       = useState<string[]>([]);
+  const [activeIdx,    setActiveIdx]    = useState(0);
+  const [dragging,     setDragging]     = useState(false);
+  const [cameraOpen,   setCameraOpen]   = useState(false);
   const [cameraReview, setCameraReview] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  function addFiles(files: FileList | null) {
+    if (!files) return;
+    const urls: string[] = [];
+    Array.from(files).forEach((f) => {
+      if (f.type.startsWith('image/')) urls.push(URL.createObjectURL(f));
+    });
+    setPhotos((prev) => {
+      const next = [...prev, ...urls];
+      setActiveIdx(next.length - 1);
+      return next;
+    });
+  }
+
   function handleFile(file: File) {
     if (!file.type.startsWith('image/')) return;
-    setPreview(URL.createObjectURL(file));
+    const url = URL.createObjectURL(file);
+    setPhotos((prev) => {
+      const next = [...prev, url];
+      setActiveIdx(next.length - 1);
+      return next;
+    });
+  }
+
+  function removePhoto(idx: number) {
+    setPhotos((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      setActiveIdx(Math.max(0, idx - 1));
+      return next;
+    });
   }
 
   const onDrop = useCallback((e: React.DragEvent) => {
@@ -127,7 +230,7 @@ function LostUploadPage({
           style={{ paddingTop: '1.25rem', paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom) + 4rem)' }}
         >
           <p className="text-white text-sm font-medium text-center">Use this photo?</p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => { setCameraReview(null); setCameraOpen(true); }}
               className="flex flex-col items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold py-3 rounded-2xl transition-colors cursor-pointer"
@@ -138,7 +241,25 @@ function LostUploadPage({
               Retake
             </button>
             <button
-              onClick={() => { setPreview(cameraReview); setCameraReview(null); }}
+              onClick={() => {
+                const url = cameraReview;
+                setPhotos((prev) => { const next = [...prev, url]; setActiveIdx(next.length - 1); return next; });
+                setCameraReview(null);
+                setCameraOpen(true);
+              }}
+              className="flex flex-col items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold py-3 rounded-2xl transition-colors cursor-pointer"
+            >
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+              </svg>
+              Add Another
+            </button>
+            <button
+              onClick={() => {
+                const url = cameraReview;
+                setPhotos((prev) => { const next = [...prev, url]; setActiveIdx(next.length - 1); return next; });
+                setCameraReview(null);
+              }}
               className="flex flex-col items-center gap-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold py-3 rounded-2xl transition-colors cursor-pointer"
             >
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
@@ -152,7 +273,7 @@ function LostUploadPage({
     );
   }
 
-  return (
+  const hasPhotos = photos.length > 0;  return (
     <div className="bg-gray-50 px-4 pt-6 pb-24 sm:py-10 flex flex-col items-center">
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-8 flex flex-col gap-5">
 
@@ -160,66 +281,95 @@ function LostUploadPage({
           <BackButton onClick={onBack} />
           <div>
             <h1 className="text-xl font-bold text-gray-900">Report Lost Item</h1>
-            <p className="text-sm text-gray-400 mt-0.5">Upload a photo or skip to fill details manually.</p>
+            <p className="text-sm text-gray-400 mt-0.5">Upload photos to help identify your item.</p>
           </div>
         </div>
 
-        {/* Drop zone */}
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={onDrop}
-          onClick={() => fileRef.current?.click()}
-          className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-2xl cursor-pointer transition-colors p-6 sm:p-10 ${
-            dragging ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-          }`}
-        >
-          {preview ? (
-            <>
-              <img src={preview} alt="Preview" className="max-h-52 rounded-xl object-contain" />
-              <p className="text-xs text-gray-400">Click to change</p>
-            </>
-          ) : (
-            <>
-              <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center">
-                <svg width="28" height="28" fill="none" stroke="#3b82f6" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-              </div>
-              <p className="text-sm font-semibold text-gray-700">Drag & drop an image here</p>
-              <p className="text-xs text-gray-400">or click to browse · PNG, JPG, WEBP</p>
-            </>
-          )}
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-        </div>
+        {/* Main image / drop zone */}
+        {hasPhotos ? (
+          <div className="relative rounded-2xl overflow-hidden bg-gray-100" style={{ height: '220px' }}>
+            <img
+              src={photos[activeIdx]}
+              alt={`Photo ${activeIdx + 1}`}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* Remove */}
+            <button
+              onClick={() => removePhoto(activeIdx)}
+              className="absolute top-2 right-2 w-7 h-7 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center text-base cursor-pointer"
+            >×</button>
+            {/* Counter */}
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs font-medium px-2.5 py-0.5 rounded-full">
+              {activeIdx + 1} / {photos.length}
+            </div>
+            {/* Arrows */}
+            {photos.length > 1 && (
+              <>
+                <button onClick={() => setActiveIdx((i) => (i - 1 + photos.length) % photos.length)} className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow text-gray-700 cursor-pointer">‹</button>
+                <button onClick={() => setActiveIdx((i) => (i + 1) % photos.length)} className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow text-gray-700 cursor-pointer">›</button>
+              </>
+            )}
+          </div>
+        ) : (
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={onDrop}
+            onClick={() => fileRef.current?.click()}
+            className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-2xl cursor-pointer transition-colors p-8 ${
+              dragging ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+            }`}
+          >
+            <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center">
+              <svg width="28" height="28" fill="none" stroke="#3b82f6" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+            </div>
+            <p className="text-sm font-semibold text-gray-700">Drag & drop an image here</p>
+            <p className="text-xs text-gray-400">or click to browse · PNG, JPG, WEBP</p>
+          </div>
+        )}
 
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-gray-100" /><span className="text-xs text-gray-400">or</span><div className="flex-1 h-px bg-gray-100" />
-        </div>
+        {/* Dot indicators */}
+        {photos.length > 1 && (
+          <div className="flex items-center justify-center gap-1.5">
+            {photos.map((_, i) => (
+              <button key={i} onClick={() => setActiveIdx(i)} className={`rounded-full transition-all cursor-pointer ${i === activeIdx ? 'w-4 h-2 bg-blue-500' : 'w-2 h-2 bg-gray-300'}`} />
+            ))}
+          </div>
+        )}
 
-        <button
-          onClick={() => setCameraOpen(true)}
-          className="flex items-center justify-center gap-2 w-full border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium py-3 rounded-xl transition-colors cursor-pointer"
-        >
-          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
-          </svg>
-          Take a Photo
-        </button>
-
+        {/* Add more / camera */}
         <div className="flex gap-3">
-          <button onClick={() => onNext(null)} className="flex-1 border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm font-medium py-2.5 rounded-xl transition-colors cursor-pointer">
-            Skip — No Image
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="flex-1 flex items-center justify-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium py-2.5 rounded-xl transition-colors cursor-pointer"
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/>
+            </svg>
+            {hasPhotos ? 'Add More' : 'Browse'}
           </button>
           <button
-            onClick={() => onNext(preview)}
-            disabled={!preview}
-            className={`flex-1 text-sm font-semibold py-2.5 rounded-xl transition-colors cursor-pointer ${preview ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+            onClick={() => setCameraOpen(true)}
+            className="flex-1 flex items-center justify-center gap-2 border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium py-2.5 rounded-xl transition-colors cursor-pointer"
           >
-            Continue →
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+            </svg>
+            Camera
           </button>
         </div>
+        <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
+
+        <button
+          onClick={() => onNext(photos[0] ?? null)}
+          disabled={!hasPhotos}
+          className={`w-full text-sm font-semibold py-2.5 rounded-xl transition-colors cursor-pointer ${hasPhotos ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+        >
+          Continue → ({photos.length} photo{photos.length !== 1 ? 's' : ''})
+        </button>
       </div>
     </div>
   );
@@ -524,6 +674,11 @@ function buildSubmittedReport({
     location: formData.location?.label ?? 'Unknown location',
     lat: formData.location?.lat ?? null,
     lng: formData.location?.lng ?? null,
+    contact: {
+      name: formData.contactName.trim() || 'Unknown user',
+      email: formData.email.trim(),
+      phone: formData.phone.trim() || undefined,
+    },
     images: [...images],
     timeAgo: 'Just now',
     read: false,
@@ -542,6 +697,7 @@ function buildBackendReportPayload(report: SubmittedReport) {
     location_label: report.location,
     latitude: report.lat,
     longitude: report.lng,
+    contact: report.contact,
     image_urls: report.images,
     reported_at: report.submittedAt,
     client_report: report,
@@ -643,6 +799,9 @@ function AnalysisPage({ images, onBack, reportType }: { images: string[]; onBack
     itemName: 'Black Nike Backpack',
     category: 'Bags & Luggage',
     description: '',
+    contactName: 'Jordan Blake',
+    email: 'jordan.blake@email.com',
+    phone: '',
     location: null,
   });
 
@@ -726,9 +885,15 @@ function AnalysisPage({ images, onBack, reportType }: { images: string[]; onBack
 
 // ── Root ───────────────────────────────────────────────────────
 export default function AIAnalysisPage() {
-  const [step,   setStep]   = useState<Step>('select');
-  const [type,   setType]   = useState<ReportType>('lost');
-  const [images, setImages] = useState<string[]>([]);
+  const [step,     setStep]     = useState<Step>('category');
+  const [, setCategory] = useState<ReportCategory>('item');
+  const [type,     setType]     = useState<ReportType>('lost');
+  const [images,   setImages]   = useState<string[]>([]);
+
+  function handleCategorySelect(c: ReportCategory) {
+    setCategory(c);
+    setStep('select');
+  }
 
   function handleTypeSelect(t: ReportType) {
     setType(t);
@@ -739,13 +904,13 @@ export default function AIAnalysisPage() {
     setImages(img ? [img] : []);
     setStep('analysis');
   }
-
   function handleFoundNext(imgs: string[]) {
     setImages(imgs);
     setStep('analysis');
   }
 
-  if (step === 'select')       return <SelectTypePage onSelect={handleTypeSelect} />;
+  if (step === 'category')     return <SelectCategoryPage onSelect={handleCategorySelect} />;
+  if (step === 'select')       return <SelectTypePage onSelect={handleTypeSelect} onBack={() => setStep('category')} />;
   if (step === 'lost-upload')  return <LostUploadPage onNext={handleLostNext} onBack={() => setStep('select')} />;
   if (step === 'found-upload') return <FoundUploadPage onNext={handleFoundNext} onBack={() => setStep('select')} />;
   return <AnalysisPage images={images} onBack={() => setStep(type === 'lost' ? 'lost-upload' : 'found-upload')} reportType={type} />;

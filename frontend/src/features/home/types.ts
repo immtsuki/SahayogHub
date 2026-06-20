@@ -9,6 +9,8 @@ export interface FeedItem {
   date: string;
   image: string;
   location: string;
+  lat?: number;
+  lng?: number;
   distance: string;
   postedAgo: string;
 }

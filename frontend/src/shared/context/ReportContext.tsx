@@ -11,6 +11,12 @@ export interface SubmittedReport {
   location: string;
   lat: number | null;
   lng: number | null;
+  contact?: {
+    name: string;
+    email: string;
+    phone?: string;
+    avatar?: string;
+  };
   images: string[];
   timeAgo: string;
   read: boolean;

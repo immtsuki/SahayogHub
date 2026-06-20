@@ -14,7 +14,7 @@ export default function FeedCard({ item }: FeedCardProps) {
     <>
       {detailOpen && (
         <ItemDetailModal
-          item={{ ...item, user: { name: item.user.name, avatar: item.user.avatar ?? '' } }}
+          item={item}
           onClose={() => setDetailOpen(false)}
         />
       )}

@@ -9,9 +9,11 @@ export interface MatchItem {
   date: string;
   status: ItemStatus;
   location: string;
+  lat?: number;
+  lng?: number;
   description: string;
   postedAgo: string;
-  user: { name: string; avatar: string };
+  user: { name: string; avatar: string; email?: string; phone?: string };
 }
 
 export const MATCH_ITEMS: MatchItem[] = [
@@ -24,9 +26,16 @@ export const MATCH_ITEMS: MatchItem[] = [
     date: 'Jan 12',
     status: 'LOST',
     location: 'Downtown',
+    lat: 40.785,
+    lng: -73.968,
     description: 'Black Nike branded backpack with multiple compartments and padded straps. Last seen near the central park entrance with a red keychain attached.',
     postedAgo: '2d ago',
-    user: { name: 'Maya Chen', avatar: 'https://i.pravatar.cc/40?img=5' },
+    user: {
+      name: 'Maya Chen',
+      avatar: 'https://i.pravatar.cc/40?img=5',
+      email: 'maya.chen@gmail.com',
+      phone: '+977 9801112233',
+    },
   },
   {
     id: 'm2',
@@ -37,9 +46,16 @@ export const MATCH_ITEMS: MatchItem[] = [
     date: 'Jan 10',
     status: 'FOUND',
     location: 'Riverside',
+    lat: 40.772,
+    lng: -73.974,
     description: 'Found a brown leather wallet by the riverside trail. Contains some cards and cash. Reach out to claim it with identification.',
     postedAgo: '4d ago',
-    user: { name: 'Jordan Lee', avatar: 'https://i.pravatar.cc/40?img=8' },
+    user: {
+      name: 'Jordan Lee',
+      avatar: 'https://i.pravatar.cc/40?img=8',
+      email: 'jordan.lee@gmail.com',
+      phone: '+977 9802223344',
+    },
   },
   {
     id: 'm3',
@@ -50,9 +66,15 @@ export const MATCH_ITEMS: MatchItem[] = [
     date: 'Jan 08',
     status: 'LOST',
     location: '5th Ave Station',
+    lat: 40.778,
+    lng: -73.962,
     description: 'Lost a Samsung Galaxy S23 with a cracked bottom-left corner. Has a clear case with a small star sticker on the back. Very important data inside.',
     postedAgo: '6d ago',
-    user: { name: 'Daniel Reyes', avatar: 'https://i.pravatar.cc/40?img=12' },
+    user: {
+      name: 'Daniel Reyes',
+      avatar: 'https://i.pravatar.cc/40?img=12',
+      email: 'daniel.reyes@gmail.com',
+    },
   },
   {
     id: 'm4',
@@ -63,9 +85,16 @@ export const MATCH_ITEMS: MatchItem[] = [
     date: 'Jan 06',
     status: 'FOUND',
     location: 'Central Park',
+    lat: 40.762,
+    lng: -73.98,
     description: 'Found a pair of round tortoiseshell glasses near the fountain area in Central Park. Prescription lenses, left them at the park security office.',
     postedAgo: '1w ago',
-    user: { name: 'Ava Patel', avatar: 'https://i.pravatar.cc/40?img=1' },
+    user: {
+      name: 'Ava Patel',
+      avatar: 'https://i.pravatar.cc/40?img=1',
+      email: 'ava.patel@gmail.com',
+      phone: '+977 9803334455',
+    },
   },
 ];
 
