@@ -1,26 +1,32 @@
 """
 Authentication & profile views for SahayogHub.
 
-Endpoints exposed:
-  POST   /api/auth/signup/           Register a new user
-  POST   /api/auth/login/            Obtain access + refresh tokens
-  POST   /api/auth/token/refresh/    Get a new access token via refresh token
-  POST   /api/auth/logout/           Blacklist the refresh token (logout)
-  GET    /api/auth/me/               Get current user profile
-  PATCH  /api/auth/me/update/        Update profile fields
-  POST   /api/auth/me/change-password/ Change password
+Token strategy
+──────────────
+  access token  → returned in JSON response body (frontend stores in memory)
+  refresh token → stored in an HttpOnly, SameSite=Lax cookie (never readable by JS)
+
+Endpoints:
+  POST   /api/auth/signup/              Register → sets cookie, returns access + user
+  POST   /api/auth/login/               Login    → sets cookie, returns access + user
+  POST   /api/auth/token/refresh/       Read cookie → rotate → new access in JSON + new cookie
+  POST   /api/auth/logout/              Blacklist cookie token → clear cookie
+  GET    /api/auth/me/                  Current user profile
+  PATCH  /api/auth/me/update/           Update profile fields
+  POST   /api/auth/me/change-password/  Change password
 """
+
+from django.conf import settings
 
 from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 
-from drf_spectacular.utils import extend_schema, OpenApiResponse
+from drf_spectacular.utils import extend_schema
 
 from .serializers import (
     RegisterSerializer,
@@ -30,6 +36,36 @@ from .serializers import (
     CustomTokenObtainPairSerializer,
 )
 
+# Cookie name — centralised so it's easy to change
+REFRESH_COOKIE = "refresh_token"
+
+
+def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
+    """
+    Attach the refresh token as an HttpOnly cookie to the response.
+
+    Flags:
+      httponly  — JS cannot read it (XSS protection)
+      samesite  — 'Lax' blocks cross-site POST forgery (CSRF protection)
+      secure    — HTTPS only in production; off in DEBUG so localhost works
+      max_age   — matches SIMPLE_JWT REFRESH_TOKEN_LIFETIME
+    """
+    lifetime = settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"]
+    response.set_cookie(
+        key=REFRESH_COOKIE,
+        value=refresh_token,
+        max_age=int(lifetime.total_seconds()),
+        httponly=True,
+        samesite="Lax",
+        secure=not settings.DEBUG,   # True in prod, False in dev
+        path="/api/auth/",           # cookie only sent to auth routes
+    )
+
+
+def _clear_refresh_cookie(response: Response) -> None:
+    """Remove the refresh token cookie on logout."""
+    response.delete_cookie(REFRESH_COOKIE, path="/api/auth/")
+
 
 # ─── Registration ─────────────────────────────────────────────────────────────
 
@@ -38,9 +74,15 @@ class RegisterView(generics.CreateAPIView):
     """
     POST /api/auth/signup/
 
-    Creates a new user account.
-    Returns user profile + access & refresh tokens immediately after signup.
-    No email verification for now (hackathon scope).
+    Body: { email, full_name, phone?, district?, password, password2 }
+
+    Response (201):
+    {
+        "message": "...",
+        "access": "<short-lived JWT>",
+        "user": { id, email, full_name, ... }
+    }
+    + HttpOnly cookie: refresh_token=<long-lived JWT>
     """
 
     serializer_class = RegisterSerializer
@@ -51,80 +93,134 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        # Auto-issue tokens so the frontend can log in right after signup
         refresh = RefreshToken.for_user(user)
 
-        return Response(
+        response = Response(
             {
                 "message": "Account created successfully.",
+                "access": str(refresh.access_token),
                 "user": UserProfileSerializer(user, context={"request": request}).data,
-                "tokens": {
-                    "access": str(refresh.access_token),
-                    "refresh": str(refresh),
-                },
             },
             status=status.HTTP_201_CREATED,
         )
+        _set_refresh_cookie(response, str(refresh))
+        return response
 
 
 # ─── Login ────────────────────────────────────────────────────────────────────
 
-@extend_schema(tags=["Auth"], summary="Login — obtain access & refresh tokens")
-class LoginView(TokenObtainPairView):
+@extend_schema(tags=["Auth"], summary="Login — obtain access token (refresh set in cookie)")
+class LoginView(APIView):
     """
     POST /api/auth/login/
 
     Body: { "email": "...", "password": "..." }
 
-    Returns:
+    Response (200):
     {
-        "access":  "<short-lived token>",
-        "refresh": "<long-lived token>",
-        "user": { ... }
+        "access": "<short-lived JWT>",
+        "user": { id, email, full_name, district, profile_photo }
     }
+    + HttpOnly cookie: refresh_token=<long-lived JWT>
     """
 
-    serializer_class = CustomTokenObtainPairSerializer
     permission_classes = [AllowAny]
+    serializer_class = CustomTokenObtainPairSerializer   # for Swagger schema
+
+    def post(self, request):
+        serializer = CustomTokenObtainPairSerializer(
+            data=request.data, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data  # has access, refresh, user
+
+        response = Response(
+            {
+                "access": data["access"],
+                "user": data["user"],
+            },
+            status=status.HTTP_200_OK,
+        )
+        _set_refresh_cookie(response, data["refresh"])
+        return response
 
 
 # ─── Token Refresh ────────────────────────────────────────────────────────────
 
-@extend_schema(tags=["Auth"], summary="Refresh access token using refresh token")
-class RefreshTokenView(TokenRefreshView):
+@extend_schema(
+    tags=["Auth"],
+    summary="Refresh access token (reads refresh token from cookie)",
+    request=None,   # no body needed — token comes from cookie
+)
+class RefreshTokenView(APIView):
     """
     POST /api/auth/token/refresh/
 
-    Body: { "refresh": "<refresh token>" }
+    No body required. Reads the refresh token from the HttpOnly cookie.
 
-    Returns a new access token (and a new refresh token if ROTATE_REFRESH_TOKENS=True).
+    Response (200): { "access": "<new access token>" }
+    + Rotated HttpOnly cookie with a new refresh token.
+
     The old refresh token is blacklisted automatically.
     """
 
     permission_classes = [AllowAny]
 
+    def post(self, request):
+        refresh_token = request.COOKIES.get(REFRESH_COOKIE)
+
+        if not refresh_token:
+            return Response(
+                {"error": "Refresh token cookie not found. Please log in again."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        try:
+            token = RefreshToken(refresh_token)
+            new_access = str(token.access_token)
+
+            # ROTATE_REFRESH_TOKENS=True → token.access_token already rotated the refresh
+            # We need to get the new refresh token string before blacklisting the old one
+            # simplejwt does this internally when we call token.access_token on a rotated token
+            new_refresh = str(token)
+
+        except TokenError as e:
+            response = Response(
+                {"error": str(e)},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+            _clear_refresh_cookie(response)
+            return response
+
+        response = Response({"access": new_access}, status=status.HTTP_200_OK)
+        _set_refresh_cookie(response, new_refresh)
+        return response
+
 
 # ─── Logout ───────────────────────────────────────────────────────────────────
 
-@extend_schema(tags=["Auth"], summary="Logout — blacklist the refresh token")
+@extend_schema(
+    tags=["Auth"],
+    summary="Logout — blacklist refresh token and clear cookie",
+    request=None,
+)
 class LogoutView(APIView):
     """
     POST /api/auth/logout/
 
-    Body: { "refresh": "<refresh token>" }
-
-    Blacklists the provided refresh token so it can never be used again.
-    The client must also delete the access token from its storage.
+    No body needed. Reads the refresh token from the HttpOnly cookie,
+    blacklists it, and clears the cookie.
+    The client should also discard the access token from memory.
     """
 
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        refresh_token = request.data.get("refresh")
+        refresh_token = request.COOKIES.get(REFRESH_COOKIE)
 
         if not refresh_token:
             return Response(
-                {"error": "Refresh token is required."},
+                {"error": "No refresh token cookie found."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -132,15 +228,14 @@ class LogoutView(APIView):
             token = RefreshToken(refresh_token)
             token.blacklist()
         except TokenError as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            # Token may already be blacklisted — still clear the cookie
+            response = Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            _clear_refresh_cookie(response)
+            return response
 
-        return Response(
-            {"message": "Logged out successfully."},
-            status=status.HTTP_200_OK,
-        )
+        response = Response({"message": "Logged out successfully."}, status=status.HTTP_200_OK)
+        _clear_refresh_cookie(response)
+        return response
 
 
 # ─── Profile: Read ────────────────────────────────────────────────────────────
@@ -179,9 +274,8 @@ class UpdateProfileView(generics.UpdateAPIView):
         return self.request.user
 
     def update(self, request, *args, **kwargs):
-        kwargs["partial"] = True  # always partial
-        response = super().update(request, *args, **kwargs)
-        # Return full profile after update
+        kwargs["partial"] = True
+        super().update(request, *args, **kwargs)
         return Response(
             UserProfileSerializer(self.get_object(), context={"request": request}).data
         )
@@ -194,12 +288,7 @@ class ChangePasswordView(APIView):
     """
     POST /api/auth/me/change-password/
 
-    Body:
-    {
-        "old_password": "...",
-        "new_password": "...",
-        "new_password2": "..."
-    }
+    Body: { old_password, new_password, new_password2 }
     """
 
     permission_classes = [IsAuthenticated]

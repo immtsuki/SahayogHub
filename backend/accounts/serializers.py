@@ -22,26 +22,19 @@ User = get_user_model()
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
-    Extends the default login response to include basic user info
-    alongside the access / refresh tokens.
+    Extends the default login serializer to include basic user info.
+    The refresh token is intentionally NOT in the response body —
+    it gets set as an HttpOnly cookie by LoginView.
 
-    Response shape:
-    {
-        "access":  "<token>",
-        "refresh": "<token>",
-        "user": {
-            "id": 1,
-            "email": "...",
-            "full_name": "...",
-            "district": "..."
-        }
-    }
+    validated_data contains: access, refresh, user
+    LoginView picks refresh out and puts it in the cookie.
     """
 
     def validate(self, attrs):
         data = super().validate(attrs)
 
-        # Append user details to the response
+        # Append user details — refresh stays in data for the view to use
+        # but the view will NOT forward it to the JSON response body
         data["user"] = {
             "id": self.user.id,
             "email": self.user.email,
