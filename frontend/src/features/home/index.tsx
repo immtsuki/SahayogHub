@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import FilterTabs from '../../shared/components/FilterTabs';
 import FeedCard from './components/FeedCard';
 import QuickStatsWidget from './components/QuickStatsWidget';
@@ -75,17 +75,20 @@ export default function HomePage() {
     return () => { active = false; };
   }, []);
 
-  const filteredItems: FeedItem[] = items.filter((item) => {
+  const filteredItems: FeedItem[] = useMemo(() => items.filter((item) => {
     if (activeFilter === 'Lost') return item.status === 'LOST';
     if (activeFilter === 'Found') return item.status === 'FOUND';
     return true;
-  });
+  }), [items, activeFilter]);
+
+  const handleFilterChange = useCallback((f: string) => setActiveFilter(f), []);
 
   return (
     <div className="w-full pb-20 md:pb-6">
+      {/* Hero — blobs promoted to GPU layer to avoid repaint on scroll */}
       <div className="relative w-full overflow-hidden bg-gradient-to-br from-[#141B3A] via-[#141B3A] to-[#6E5BFF] px-4 sm:px-8 py-12 sm:py-16 flex flex-col items-center text-center">
-        <div className="absolute -top-10 -left-10 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-12 -right-8 w-72 h-72 bg-[#D4AF37]/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-10 -left-10 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none will-change-transform" style={{ transform: 'translateZ(0)' }} />
+        <div className="absolute -bottom-12 -right-8 w-72 h-72 bg-[#D4AF37]/20 rounded-full blur-3xl pointer-events-none will-change-transform" style={{ transform: 'translateZ(0)' }} />
 
         <p className="relative text-[#D4AF37] text-xs font-semibold uppercase tracking-widest mb-3">
           Sahayog Hub · Lost &amp; Found
@@ -103,12 +106,12 @@ export default function HomePage() {
       <div ref={sentinelRef} className="h-px w-full" />
 
       {/* ── Sticky filter tabs bar ── */}
-      <div className={`sticky top-0 z-40 w-full px-3 sm:px-4 md:px-5 lg:px-8 transition-all duration-200 ${isStuck ? 'py-2' : 'py-3'}`}>
+      <div className={`sticky top-0 z-40 w-full px-3 sm:px-4 md:px-5 lg:px-8 transition-[padding] duration-200 ${isStuck ? 'py-2' : 'py-3'}`}>
         <div className="max-w-7xl mx-auto">
           <FilterTabs
             tabs={FILTER_TABS}
             active={activeFilter}
-            onChange={setActiveFilter}
+            onChange={handleFilterChange}
             scroll
           />
         </div>

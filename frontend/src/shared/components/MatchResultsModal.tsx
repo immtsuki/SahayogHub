@@ -1,5 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { AiMatch } from '../types';
+import ItemDetailModal from './ItemDetailModal';
+import type { ItemDetail } from './ItemDetailModal';
 
 interface Props {
   reportType: 'lost' | 'found';
@@ -8,6 +10,8 @@ interface Props {
 }
 
 export default function MatchResultsModal({ reportType, matches, onClose }: Props) {
+  const [selectedMatch, setSelectedMatch] = useState<AiMatch | null>(null);
+
   // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -17,7 +21,37 @@ export default function MatchResultsModal({ reportType, matches, onClose }: Prop
   const hasMatches = matches.length > 0;
   const oppLabel   = reportType === 'lost' ? 'Found' : 'Lost';
 
+  function toItemDetail(match: AiMatch): ItemDetail {
+    return {
+      id: match.id,
+      title: match.title,
+      description: match.description,
+      image: match.images?.[0] || match.image || '',
+      status: match.report_type === 'lost' ? 'LOST' : 'FOUND',
+      date: match.date || '',
+      location: match.location || 'Location not specified',
+      lat: match.lat,
+      lng: match.lng,
+      distance: '',
+      postedAgo: match.postedAgo || '',
+      user: {
+        name: match.contact?.name || match.user?.name || 'Unknown',
+        avatar: match.contact?.avatar || match.user?.avatar || `https://i.pravatar.cc/40?u=${match.id}`,
+        email: match.contact?.email || match.user?.email,
+        phone: match.contact?.phone || match.user?.phone,
+      },
+      matchPercent: Math.round(match.matchPercent ?? 0),
+    };
+  }
+
   return (
+    <>
+      {selectedMatch && (
+        <ItemDetailModal
+          item={toItemDetail(selectedMatch)}
+          onClose={() => setSelectedMatch(null)}
+        />
+      )}
     <div
       className="fixed inset-0 z-[9995] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -65,7 +99,11 @@ export default function MatchResultsModal({ reportType, matches, onClose }: Prop
           {hasMatches ? (
             <div className="flex flex-col gap-3">
               {matches.map((match, i) => (
-                <div key={match.id ?? i} className="flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow">
+                <div
+                  key={match.id ?? i}
+                  onClick={() => setSelectedMatch(match)}
+                  className="flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-3 shadow-sm hover:shadow-md hover:border-blue-200 transition-all cursor-pointer"
+                >
                   {/* Image */}
                   <div className="relative shrink-0">
                     <img
@@ -134,5 +172,6 @@ export default function MatchResultsModal({ reportType, matches, onClose }: Prop
         </div>
       </div>
     </div>
+    </>
   );
 }

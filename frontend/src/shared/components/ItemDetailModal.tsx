@@ -152,7 +152,7 @@ export default function ItemDetailModal({ item, onClose }: Props) {
       {/* Modal — centered on all screen sizes, never goes below screen */}
       {createPortal(
       <div
-        className="fixed inset-0 z-[9990] bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 md:p-6"
+        className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 md:p-6"
         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       >
         <div className="w-full max-w-xl bg-white rounded-3xl overflow-hidden flex flex-col shadow-2xl"

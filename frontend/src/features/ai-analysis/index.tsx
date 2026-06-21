@@ -8,6 +8,7 @@ import type { SubjectType, SubmittedReport, AiMatch } from '../../shared/types';
 import { createReport } from '../../shared/api/reports';
 import { useAuth } from '../../shared/context/AuthContext';
 import MatchResultsModal from '../../shared/components/MatchResultsModal';
+import { uploadImagesToCloudinary } from '../../shared/utils/cloudinary';
 
 type ReportType    = 'lost' | 'found';
 type ReportCategory = SubjectType;
@@ -822,6 +823,7 @@ function AnalysisPage({
   const formKey = `${reportCategory}-${user?.email ?? 'guest'}`;
   const [toast] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [matchResults, setMatchResults] = useState<AiMatch[] | null>(null);
   const formDataRef = useRef<FormData>({
@@ -839,11 +841,33 @@ function AnalysisPage({
     const fd = formDataRef.current;
     const now = new Date().toISOString();
     setSubmitting(true);
+    setUploadingImages(true);
     setSubmitError(null);
+
+    let cloudinaryImages: string[];
+    try {
+      cloudinaryImages = await uploadImagesToCloudinary(images);
+    } catch (uploadError) {
+      console.warn('Cloudinary upload failed:', uploadError);
+      const msg = uploadError instanceof Error ? uploadError.message : 'Unknown error';
+      setSubmitError(`Image upload failed: ${msg}`);
+      setSubmitting(false);
+      setUploadingImages(false);
+      return;
+    }
+    setUploadingImages(false);
+    try {
+      cloudinaryImages = await uploadImagesToCloudinary(images);
+    } catch (uploadError) {
+      console.warn('Cloudinary upload failed:', uploadError);
+      setSubmitError('Image upload failed. Please check your connection and try again.');
+      setSubmitting(false);
+      return;
+    }
 
     const report = buildSubmittedReport({
       formData: fd,
-      images,
+      images: cloudinaryImages,
       reportType,
       reportCategory,
       submittedAt: now,
@@ -936,7 +960,7 @@ function AnalysisPage({
               disabled={submitting}
               className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold px-8 py-3 rounded-xl flex items-center gap-2 transition-colors cursor-pointer disabled:cursor-wait"
             >
-              {submitting ? 'Saving...' : 'Continue'}
+              {submitting ? (uploadingImages ? 'Uploading images…' : 'Saving...') : 'Continue'}
             </button>
           </div>
         </main>
@@ -962,7 +986,7 @@ function AnalysisPage({
           disabled={submitting}
           className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-semibold py-3 rounded-2xl flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:cursor-wait"
         >
-          {submitting ? 'Saving...' : 'Continue'}
+          {submitting ? (uploadingImages ? 'Uploading images…' : 'Saving...') : 'Continue'}
         </button>
       </div>
     </div>

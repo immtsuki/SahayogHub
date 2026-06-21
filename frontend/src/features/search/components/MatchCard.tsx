@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import StatusBadge from '../../../shared/components/StatusBadge';
 import ItemDetailModal from '../../../shared/components/ItemDetailModal';
+import DescriptionPreview from '../../../shared/components/DescriptionPreview';
 import { useRequireAuth } from '../../../shared/hooks/useRequireAuth';
 import type { MatchItem } from '../data';
 
@@ -83,6 +84,8 @@ export default function MatchCard({ item }: MatchCardProps) {
               {item.location}
             </span>
           </div>
+
+          <DescriptionPreview text={item.description} />
 
           {/* View Details */}
           <button

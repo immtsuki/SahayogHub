@@ -220,6 +220,12 @@ CORS_ALLOW_CREDENTIALS = True
 AI_REDACTION_URL = config("AI_REDACTION_URL", default="http://127.0.0.1:8012/api/redact-document")
 AI_COMPARISON_URL = config("AI_COMPARISON_URL", default="http://127.0.0.1:8011/api/compare-candidates")
 AI_REQUEST_TIMEOUT_SECONDS = config("AI_REQUEST_TIMEOUT_SECONDS", default=45, cast=int)
+
+# ─── Cloudinary ───────────────────────────────────────────────────────────────
+
+CLOUDINARY_CLOUD_NAME   = config("CLOUDINARY_CLOUD_NAME", default="")
+CLOUDINARY_API_KEY      = config("CLOUDINARY_API_KEY", default="")
+CLOUDINARY_API_SECRET   = config("CLOUDINARY_API_SECRET", default="")
 AI_MATCH_THRESHOLD = config("AI_MATCH_THRESHOLD", default=62, cast=int)  # high-precision recommendations only
 AI_VISUAL_MATCH_THRESHOLD = config("AI_VISUAL_MATCH_THRESHOLD", default=55, cast=int)  # pre text/category bonus floor
 AI_REDACTION_TIMEOUT_SECONDS = config("AI_REDACTION_TIMEOUT_SECONDS", default=10, cast=int)

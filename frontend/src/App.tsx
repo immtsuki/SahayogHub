@@ -45,7 +45,7 @@ export default function App() {
         <div className="flex flex-col h-screen bg-gray-50">
           <NavbarDesktop />
           <MobileHeader />
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto overscroll-none" style={{ WebkitOverflowScrolling: 'touch' }}>
             <Routes>
               <Route path="/"               element={<HomePage />} />
               <Route path="/maps"           element={<MapsPage />} />

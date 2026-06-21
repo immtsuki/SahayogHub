@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import type { FeedItem } from '../types';
 import StatusBadge from '../../../shared/components/StatusBadge';
 import ItemDetailModal from '../../../shared/components/ItemDetailModal';
+import DescriptionPreview from '../../../shared/components/DescriptionPreview';
 import { useRequireAuth } from '../../../shared/hooks/useRequireAuth';
 
 interface FeedCardProps {
   item: FeedItem;
 }
 
-export default function FeedCard({ item }: FeedCardProps) {
+const FeedCard = memo(function FeedCard({ item }: FeedCardProps) {
   const [detailOpen, setDetailOpen] = useState(false);
   const requireAuth = useRequireAuth();
 
@@ -21,7 +22,7 @@ export default function FeedCard({ item }: FeedCardProps) {
         />
       )}
 
-      <article className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
+      <article className="feed-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
         {/* ── User header ── */}
         <div className="flex items-center justify-between px-4 pt-4 pb-3">
           <div className="flex items-center gap-3 min-w-0">
@@ -91,6 +92,8 @@ export default function FeedCard({ item }: FeedCardProps) {
             </span>
           </div>
 
+          <DescriptionPreview text={item.description} />
+
           {/* View Details */}
           <button
             onClick={() => requireAuth(() => setDetailOpen(true))}
@@ -122,4 +125,6 @@ export default function FeedCard({ item }: FeedCardProps) {
       </article>
     </>
   );
-}
+});
+
+export default FeedCard;
