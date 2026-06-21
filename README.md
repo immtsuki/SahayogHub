@@ -9,7 +9,6 @@
 ![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=00e5ff)
 ![Django](https://img.shields.io/badge/Django-0d2b1a?style=flat-square&logo=django&logoColor=00e5ff)
 ![Python](https://img.shields.io/badge/Python-0d1b4b?style=flat-square&logo=python&logoColor=00e5ff)
-![MIT License](https://img.shields.io/badge/License-MIT-00e5ff?style=flat-square&labelColor=0d1b4b)
 
 </div>
 
