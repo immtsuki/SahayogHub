@@ -1,12 +1,8 @@
 <div align="center">
 
-<img src="banner.svg" alt="SahayogHub" width="100%"/>
+<img src="banner.png" alt="SahayogHub" width="100%"/>
 
 <br/>
-
-[![Live Demo](https://img.shields.io/badge/🚀%20Live%20Demo-Visit%20Now-00e5ff?style=for-the-badge&labelColor=0d1b4b)](YOUR_DEMO_LINK_HERE)
-[![Video](https://img.shields.io/badge/🎬%20Walkthrough-Watch-00b4d8?style=for-the-badge&labelColor=0d1b4b)](YOUR_VIDEO_LINK_HERE)
-[![Built At](https://img.shields.io/badge/🏆%20KMC%20HackVerse-2026-00e5ff?style=for-the-badge&labelColor=0a0f2e)](YOUR_HACKATHON_LINK_HERE)
 
 <br/>
 
@@ -30,7 +26,8 @@ When a dog goes missing, a road collapses, a child disappearss — citizens face
 | ❌ Current Reality | ✅ With SahayogHub |
 |---|---|
 | Post on 5 Facebook groups, hope someone sees it | One upload. Instant community reach. |
-| Search WhatsApp/Viber groups for a missing person | Searchable, centralized database |
+| Search WhatsApp/Viber groups for a missing person | Searchable, centralized database   |
+| Struggle for days just to get the contact information | Easy contact, Locatoin Sharing |
 
 **The solutions exist. They are just scattered, unmanaged, and inaccessible.**
 
@@ -50,11 +47,11 @@ Citizens report  →  Community sees  →  Authorities respond  →  Issues reso
 
 <div align="center">
 
-| 🏠 Dashboard | 🔍 Lost & Found | 🚨 Emergency SOS | 🧑 Missing Person |
+| 🏠 Dashboard | 🔍 Lost & Found | 🧑 Missing Person |
 
 
 
-| `[Paste Screenshot]` | `[Paste Screenshot]` | `[Paste Screenshot]` | `[Paste Screenshot]` |
+| `[Paste Screenshot]` | `[Paste Screenshot]` | `[Paste Screenshot]` | 
 </div>
 
 <img src="divider.svg" width="100%"/>
@@ -91,7 +88,6 @@ No more scrolling through ten Facebook pages. Citizens upload **lost or found it
 
 <br/>
 
-
 <img src="divider.svg" width="100%"/>
 
 ## 🛠️ Tech Stack
@@ -102,11 +98,9 @@ No more scrolling through ten Facebook pages. Citizens upload **lost or found it
 |:---:|:---:|:---|
 | **Frontend** | ![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=00e5ff) | UI, routing, state management |
 | **Backend** | ![Django](https://img.shields.io/badge/Django-092E20?style=flat-square&logo=django&logoColor=00e5ff) | REST API, auth, business logic |
-| **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-0d1b4b?style=flat-square&logo=postgresql&logoColor=00e5ff) | PostgreSQL  |
-| **Auth** | ![JWT](https://img.shields.io/badge/JWT-0d1b4b?style=flat-square&logo=jsonwebtokens&logoColor=00e5ff) | `[Specify: JWT / OAuth]` |
+| **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-0d1b4b?style=flat-square&logo=postgresql&logoColor=00e5ff) | PostgreSQL |
+| **Auth** | ![JWT](https://img.shields.io/badge/JWT-0d1b4b?style=flat-square&logo=jsonwebtokens&logoColor=00e5ff) | JWT  |
 | **Maps** | ![Leaflet](https://img.shields.io/badge/Leaflet-0d1b4b?style=flat-square&logo=leaflet&logoColor=00e5ff) |  Google Maps |
-| **Hosting** | ![Vercel](https://img.shields.io/badge/Vercel-0d1b4b?style=flat-square&logo=vercel&logoColor=00e5ff) | Github |
-
 </div>
 
 <img src="divider.svg" width="100%"/>
@@ -126,7 +120,7 @@ No more scrolling through ten Facebook pages. Citizens upload **lost or found it
                             │
 ┌───────────────────────────▼──────────────────────────────┐
 │                      Database                            │
-│              PostgreSQL / SQLite                         │
+│                   PostgreSQL                             │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -139,7 +133,7 @@ No more scrolling through ten Facebook pages. Citizens upload **lost or found it
 | 🔴 | **Theft Report System** | File and track theft complaints with evidence and case numbers |
 | 🔴 | **Criminal Identification Search** | Search flagged individuals, linked to law enforcement |
 | 🟡 | **Fund Raiser** | Help needy raise a fund |
-| 🟡 | **AI Match Alerts** | Auto-match lost items & missing persons to new reports |
+| 🟡 | **Secured Database** | Auto-match lost items & missing persons to new reports |
 | 🟡 | **Government Service Integration** | Direct links to official e-gov portals |
 | 🟢 | **Nepali Language Support** | Full localization for rural and broader reach |
 | 🟢 | **Mobile App (React Native)** | Cross-platform iOS/Android version |
@@ -153,9 +147,9 @@ No more scrolling through ten Facebook pages. Citizens upload **lost or found it
 | Name | Role |
 |:---:|:---:|
 | **Kirtan Gurung** | Frontend Developer |
-| **Binesh Adhikari** | Frontend Developer |
-| **James Gurung** | Backend Developer |
-| **Anil Shrestha** | Team Leader |
+| **Binesh Adhikari** | Backend Developer |
+| **James Gurung** | AI / ML |
+| **Anil Shrestha** | UI/Ux & SRS Document |
 
 </div>
 
@@ -166,8 +160,6 @@ No more scrolling through ten Facebook pages. Citizens upload **lost or found it
 <div align="center">
 
 **KMC HackVerse 2026** · Baaghbazar, Kathmandu
-
-*May the best civic tech win.* 🇳🇵
 
 </div>
 
