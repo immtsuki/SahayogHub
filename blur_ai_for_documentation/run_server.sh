@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 set -e
-uvicorn server_yolo_fastapi:app --reload --host 0.0.0.0 --port 8000
+uvicorn server_yolo_fastapi:app --reload --host 0.0.0.0 --port 8012

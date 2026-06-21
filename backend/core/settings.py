@@ -86,7 +86,9 @@ if _db_url:
     _parsed = dj_database_url.parse(_db_url, conn_max_age=600)
     # psycopg v3 driver — required for Python 3.13 (no psycopg2 wheels yet)
     _parsed["ENGINE"] = "django.db.backends.postgresql"
-    _parsed.setdefault("OPTIONS", {})["sslmode"] = "require"
+    # Only require SSL for remote (non-localhost) connections
+    if "localhost" not in _db_url and "127.0.0.1" not in _db_url:
+        _parsed.setdefault("OPTIONS", {})["sslmode"] = "require"
     DATABASES = {"default": _parsed}
 else:
     DATABASES = {
@@ -217,7 +219,7 @@ CORS_ALLOW_CREDENTIALS = True
 
 # AI model services. Django keeps the database flow authoritative and calls these
 # FastAPI services opportunistically during report creation.
-AI_REDACTION_URL = config("AI_REDACTION_URL", default="http://127.0.0.1:8012/api/redact-document")
+AI_REDACTION_URL = config("AI_REDACTION_URL", default="http://127.0.0.1:8012/redact-image")
 AI_COMPARISON_URL = config("AI_COMPARISON_URL", default="http://127.0.0.1:8011/api/compare-candidates")
 AI_REQUEST_TIMEOUT_SECONDS = config("AI_REQUEST_TIMEOUT_SECONDS", default=45, cast=int)
 

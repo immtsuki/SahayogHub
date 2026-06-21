@@ -1,0 +1,18 @@
+==========================================
+FAST GPU DOCUMENT REDACTOR STARTING
+PYTHON: D:\SahayogAI\blur_ai_venv\Scripts\python.exe
+BASE_DIR: D:\SahayogApp\blur_ai_for_documentation
+OUTPUT_DIR: D:\SahayogApp\blur_ai_for_documentation\api_output
+MODEL_PATH: None
+TORCH: 2.7.1+cu118
+TORCH CUDA: 11.8
+CUDA_AVAILABLE: True
+DEVICE: cuda:0
+YOLO_DEVICE: 0
+USE_GPU: True
+GPU: GeForce GTX 1650
+OCR_LANGS: ['ne', 'en']
+EASYOCR_GPU: True
+==========================================
+YOLO not loaded. Put best.pt in .\ai\best.pt or set MODEL_PATH.
+INFO:     127.0.0.1:57212 - "GET /health HTTP/1.1" 200 OK

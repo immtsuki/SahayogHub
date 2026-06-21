@@ -45,19 +45,19 @@ pip install -r requirements.txt
 ## Run API now, even without YOLO
 
 ```bash
-uvicorn server_yolo_fastapi:app --reload --host 0.0.0.0 --port 8000
+uvicorn server_yolo_fastapi:app --reload --host 0.0.0.0 --port 8012
 ```
 
 Open:
 
 ```text
-http://127.0.0.1:8000/docs
+http://127.0.0.1:8012/docs
 ```
 
 Upload using curl:
 
 ```bash
-curl -X POST "http://127.0.0.1:8000/redact?engine=auto&mode=blur" \
+curl -X POST "http://127.0.0.1:8012/redact?engine=auto&mode=blur" \
   -F "file=@nagrita/Pasted image (2).png"
 ```
 
@@ -96,20 +96,20 @@ Restart FastAPI. Now `engine=auto` will use YOLO.
 OCR fallback:
 
 ```bash
-curl -X POST "http://127.0.0.1:8000/redact?engine=ocr&mode=blur&ocr_passes=balanced" \
+curl -X POST "http://127.0.0.1:8012/redact?engine=ocr&mode=blur&ocr_passes=balanced" \
   -F "file=@nagrita/Pasted image (2).png"
 ```
 
 YOLO only:
 
 ```bash
-curl -X POST "http://127.0.0.1:8000/redact?engine=yolo&mode=blur" \
+curl -X POST "http://127.0.0.1:8012/redact?engine=yolo&mode=blur" \
   -F "file=@nagrita/Pasted image (2).png"
 ```
 
 Blur photo too:
 
 ```bash
-curl -X POST "http://127.0.0.1:8000/redact?engine=auto&mode=blur&redact_photo=true" \
+curl -X POST "http://127.0.0.1:8012/redact?engine=auto&mode=blur&redact_photo=true" \
   -F "file=@nagrita/Pasted image (2).png"
 ```

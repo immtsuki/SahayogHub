@@ -69,6 +69,8 @@ export interface ReportQuery {
   mine?: boolean;
   ids?: string[];
   recent?: boolean;
+  page?: number;
+  page_size?: number;
 }
 
 function queryString(params: ReportQuery = {}) {
@@ -81,12 +83,28 @@ function queryString(params: ReportQuery = {}) {
   if (params.mine) query.set('mine', 'true');
   if (params.ids?.length) query.set('ids', params.ids.join(','));
   if (params.recent) query.set('recent', 'true');
+  if (params.page) query.set('page', String(params.page));
+  if (params.page_size) query.set('page_size', String(params.page_size));
   const text = query.toString();
   return text ? `?${text}` : '';
 }
 
 export async function fetchReports(params?: ReportQuery) {
   return apiRequest<ApiReport[]>(`/api/reports/${queryString(params)}`);
+}
+
+export async function fetchReportsWithTotal(params?: ReportQuery): Promise<{ reports: ApiReport[]; total: number }> {
+  const url = `${(import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000').replace(/\/$/, '')}/api/reports/${queryString(params)}`;
+  const token = localStorage.getItem('sahayog-access-token');
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const response = await fetch(url, { headers, credentials: 'include' });
+  if (!response.ok) throw new Error(`Failed to fetch reports: ${response.status}`);
+
+  const total = parseInt(response.headers.get('X-Total-Count') ?? '0', 10);
+  const reports = await response.json() as ApiReport[];
+  return { reports, total };
 }
 
 export async function fetchReportStats() {

@@ -5,9 +5,10 @@ import QuickStatsWidget from './components/QuickStatsWidget';
 import NearbyActivityWidget from './components/NearbyActivityWidget';
 import CommunityWidget from './components/CommunityWidget';
 import type { CommunityMember, FeedItem, QuickStats } from './types';
-import { fetchReports, fetchReportStats, toFeedItem } from '../../shared/api/reports';
+import { fetchReportsWithTotal, fetchReportStats, toFeedItem } from '../../shared/api/reports';
 
 const FILTER_TABS = ['All', 'Lost', 'Found', 'Nearby', 'Recent'];
+const PAGE_SIZE = 9;
 
 export default function HomePage() {
   const [activeFilter, setActiveFilter] = useState('All');
@@ -17,10 +18,13 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isStuck, setIsStuck] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  // Cache: avoid re-fetching within 60 s when the user navigates away and back
-  const cacheRef = useRef<{ ts: number; items: FeedItem[]; stats: QuickStats; members: CommunityMember[] } | null>(null);
+  const cacheRef = useRef<{ ts: number; stats: QuickStats; members: CommunityMember[] } | null>(null);
   const CACHE_TTL = 60_000;
+
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
 
   // Detect when the sticky bar is actually stuck (sentinel scrolls out of view)
   useEffect(() => {
@@ -38,31 +42,28 @@ export default function HomePage() {
     let active = true;
 
     async function loadHomeData() {
-      // Serve from cache if fresh
-      if (cacheRef.current && Date.now() - cacheRef.current.ts < CACHE_TTL) {
-        setItems(cacheRef.current.items);
-        setStats(cacheRef.current.stats);
-        setMembers(cacheRef.current.members);
-        setLoading(false);
-        return;
-      }
+      setLoading(true);
       try {
-        const [reports, reportStats] = await Promise.all([
-          fetchReports({ recent: true }),
-          fetchReportStats(),
+        const [{ reports, total }, reportStats] = await Promise.all([
+          fetchReportsWithTotal({ recent: true, page, page_size: PAGE_SIZE }),
+          cacheRef.current && Date.now() - cacheRef.current.ts < CACHE_TTL
+            ? Promise.resolve({ quickStats: cacheRef.current.stats, communityMembers: cacheRef.current.members })
+            : fetchReportStats(),
         ]);
         if (!active) return;
         const nextItems   = reports.map(toFeedItem);
         const nextStats   = reportStats.quickStats;
         const nextMembers = reportStats.communityMembers;
-        cacheRef.current  = { ts: Date.now(), items: nextItems, stats: nextStats, members: nextMembers };
+        cacheRef.current  = { ts: Date.now(), stats: nextStats, members: nextMembers };
         setItems(nextItems);
+        setTotalItems(total);
         setStats(nextStats);
         setMembers(nextMembers);
         setError(null);
       } catch {
         if (!active) return;
         setItems([]);
+        setTotalItems(0);
         setStats({ lost: 0, found: 0, recoveries: 0 });
         setMembers([]);
         setError('Could not load reports from the database.');
@@ -73,7 +74,7 @@ export default function HomePage() {
 
     loadHomeData();
     return () => { active = false; };
-  }, []);
+  }, [page]);
 
   const filteredItems: FeedItem[] = useMemo(() => items.filter((item) => {
     if (activeFilter === 'Lost') return item.status === 'LOST';
@@ -81,7 +82,10 @@ export default function HomePage() {
     return true;
   }), [items, activeFilter]);
 
-  const handleFilterChange = useCallback((f: string) => setActiveFilter(f), []);
+  const handleFilterChange = useCallback((f: string) => {
+    setActiveFilter(f);
+    setPage(1);
+  }, []);
 
   return (
     <div className="w-full pb-20 md:pb-6">
@@ -128,11 +132,44 @@ export default function HomePage() {
             ) : filteredItems.length === 0 ? (
               <div className="text-center py-16 text-sm text-gray-400">No items found.</div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                {filteredItems.map((item) => (
-                  <FeedCard key={item.id} item={item} />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {filteredItems.map((item) => (
+                    <FeedCard key={item.id} item={item} />
+                  ))}
+                </div>
+
+                {/* ── Pagination ── */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-6 px-1">
+                    <button
+                      onClick={() => { setPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      disabled={page === 1}
+                      className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M15 18l-6-6 6-6"/>
+                      </svg>
+                      Prev
+                    </button>
+
+                    <span className="text-sm text-gray-500 font-medium">
+                      Page {page} of {totalPages}
+                    </span>
+
+                    <button
+                      onClick={() => { setPage((p) => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      disabled={page === totalPages}
+                      className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Next
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9 18l6-6-6-6"/>
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </section>
 

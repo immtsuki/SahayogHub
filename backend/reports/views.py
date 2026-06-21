@@ -59,9 +59,57 @@ class ReportListCreateView(generics.ListCreateAPIView):
                 qs = qs.none()
 
         if params.get("recent") == "true":
-            qs = qs.order_by("-reported_at")[:10]
+            qs = qs.order_by("-reported_at")
+
+        # Pagination
+        try:
+            page      = max(1, int(params.get("page", 1)))
+            page_size = max(1, min(50, int(params.get("page_size", 9))))
+        except (ValueError, TypeError):
+            page, page_size = 1, 9
+
+        offset = (page - 1) * page_size
+        qs = qs[offset: offset + page_size]
 
         return qs
+
+    def list(self, request, *args, **kwargs):
+        # Count before pagination for total pages info
+        qs_full = Report.objects.select_related("owner").all()
+        params  = request.query_params
+
+        report_type = params.get("type") or params.get("report_type")
+        if report_type in {Report.LOST, Report.FOUND}:
+            qs_full = qs_full.filter(report_type=report_type)
+
+        status_filter = params.get("status")
+        if status_filter:
+            normalized = status_filter.lower()
+            if normalized in {"lost", "found"}:
+                qs_full = qs_full.filter(report_type=normalized)
+            elif normalized not in {"all", "nearby", "recent"}:
+                qs_full = qs_full.filter(status=normalized)
+
+        q = params.get("q") or params.get("query")
+        if q:
+            qs_full = qs_full.filter(
+                Q(title__icontains=q)
+                | Q(description__icontains=q)
+                | Q(category_label__icontains=q)
+                | Q(location_label__icontains=q)
+            )
+
+        mine = params.get("mine")
+        if mine == "true":
+            qs_full = qs_full.filter(owner=request.user) if request.user.is_authenticated else qs_full.none()
+
+        total = qs_full.count()
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        response = Response(serializer.data)
+        response["X-Total-Count"] = total
+        response["Access-Control-Expose-Headers"] = "X-Total-Count"
+        return response
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

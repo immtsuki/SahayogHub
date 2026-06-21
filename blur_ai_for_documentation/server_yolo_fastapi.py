@@ -12,6 +12,10 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple
 
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", BASE_DIR / "api_output"))
+os.environ.setdefault("YOLO_CONFIG_DIR", str(BASE_DIR))
+
 import cv2
 import easyocr
 import numpy as np
@@ -31,14 +35,15 @@ except Exception:
 # FAST CONFIG
 # ============================================================
 
-BASE_DIR = Path(__file__).resolve().parent
-
-OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", BASE_DIR / "api_output"))
+OUTPUT_DIR = DEFAULT_OUTPUT_DIR
 UPLOAD_DIR = OUTPUT_DIR / "uploads"
 REDACTED_DIR = OUTPUT_DIR / "redacted"
 JSON_DIR = OUTPUT_DIR / "json"
+ULTRALYTICS_CONFIG_DIR = Path(os.environ["YOLO_CONFIG_DIR"])
 
-for d in (OUTPUT_DIR, UPLOAD_DIR, REDACTED_DIR, JSON_DIR):
+os.environ.setdefault("YOLO_CONFIG_DIR", str(ULTRALYTICS_CONFIG_DIR))
+
+for d in (OUTPUT_DIR, UPLOAD_DIR, REDACTED_DIR, JSON_DIR, ULTRALYTICS_CONFIG_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
 MODEL_CANDIDATES = [
@@ -75,7 +80,7 @@ else:
     USE_GPU = True
 
 EASYOCR_GPU = os.getenv("EASYOCR_GPU", "1") == "1" and USE_GPU
-OCR_LANGS = [x.strip() for x in os.getenv("OCR_LANGS", "en").split(",") if x.strip()]
+OCR_LANGS = [x.strip() for x in os.getenv("OCR_LANGS", "ne,en").split(",") if x.strip()]
 
 CPU_THREADS = int(os.getenv("CPU_THREADS", "8"))
 torch.set_num_threads(min(CPU_THREADS, os.cpu_count() or CPU_THREADS))
@@ -160,6 +165,35 @@ DEFAULT_YOLO_REDACT_CLASSES = {
 }
 PHOTO_CLASSES = {"photo", "face", "portrait"}
 
+VALUE_SEPARATOR_CHARS = " \t:-\u0903\u2013\u2014;,\uFF1A./()\u0964"
+HARD_VALUE_SEPARATOR_CHARS = ":\u0903\uFF1A.-/"
+NON_VALUE_FRAGMENT_RE = re.compile(
+    r"^(?:"
+    r"[\u0900-\u097F\s]*(?:"
+    r"\u0938\u0930\u0915\u093e\u0930|"
+    r"\u092e\u0928\u094d\u0924\u094d\u0930\u093e\u0932\u092f|"
+    r"\u0915\u093e\u0930\u094d\u092f\u093e\u0932\u092f|"
+    r"\u092a\u094d\u0930\u092e\u093e\u0923\u092a\u0924\u094d\u0930"
+    r")[\u0900-\u097F\s]*|"
+    r"(?:\u0935\u093e\u0938\u0938\u094d\u0925\u093e\u0928|\u092c\u093e\u0938\u0938\u094d\u0925\u093e\u0928|\u0925\u0930|"
+    r"\u0928\u0902|\u0928\u092e\u094d\u092c\u0930)"
+    r")$",
+    re.I,
+)
+
+EXTRA_ID_LABEL_RE = re.compile(
+    r"("
+    r"\u0928\u093e[\u0903:]?\.?\s*\u092a\u094d\u0930\.?\s*\u0928\s*[\u0902.]?|"
+    r"\u0928\u093e[\u0903:]?\s*\u092a\u094d\u0930\u0928+\u0902?"
+    r")",
+    re.I,
+)
+IDENTIFIER_NUMBER_LABEL_RE = re.compile(
+    r"(citizenship\s*(?:no|num|number)?|national\s*id|passport\s*(?:no|num|number)?|"
+    r"d\.?\s*l\.?\s*no\.?|driver'?s?\s*licen[cs]e|driving\s*licen[cs]e|license\s*(?:no|num|number)?)",
+    re.I,
+)
+
 
 # ============================================================
 # BASIC HELPERS
@@ -180,9 +214,78 @@ def clean_value(value: Optional[str]) -> Optional[str]:
     if not value:
         return None
     value = normalize_text(value)
-    value = re.sub(r"^[\s:;,./()\-]+", "", value)
-    value = re.sub(r"[\s:;,./()\-]+$", "", value)
+    value = re.sub(r"^[\s:;,./()\-\u0903\uFF1A]+", "", value)
+    value = re.sub(r"[\s:;,./()\-\u0903\uFF1A]+$", "", value)
     return value or None
+
+
+def value_start_after_label(text: str, index: int) -> Tuple[int, bool]:
+    pos = index
+    while pos < len(text) and text[pos].isspace():
+        pos += 1
+
+    has_separator = pos < len(text) and text[pos] in HARD_VALUE_SEPARATOR_CHARS
+    if not has_separator:
+        return pos, False
+
+    while pos < len(text) and text[pos] in VALUE_SEPARATOR_CHARS:
+        pos += 1
+    return pos, True
+
+
+def span_overlaps(span: Tuple[int, int], others: List[Tuple[int, int]]) -> bool:
+    start, end = span
+    return any(start < other_end and end > other_start for other_start, other_end in others)
+
+
+def span_is_inside_larger(span: Tuple[int, int], others: List[Tuple[int, int]]) -> bool:
+    start, end = span
+    return any(other_start <= start and end <= other_end and (other_start, other_end) != span for other_start, other_end in others)
+
+
+def is_sensitive_field_value(value: Optional[str]) -> bool:
+    value = clean_value(value)
+    if not value:
+        return False
+    if SAFE_LABEL_RE.fullmatch(value) or DOCUMENT_HINT_RE.fullmatch(value):
+        return False
+    if value.lower().startswith("category"):
+        return False
+    if NON_VALUE_FRAGMENT_RE.fullmatch(value):
+        return False
+    lower = value.lower()
+    if re.search(r"\b(government|department|transport|management|signature|issued\s+by)\b", lower):
+        return False
+    compact = re.sub(r"\s+", "", value)
+    if len(compact) < 2:
+        return False
+    return bool(re.search(rf"[A-Za-z\u0900-\u097F{D}]", value))
+
+
+def value_label_matches(text: str):
+    matches = list(LABEL_RE.finditer(text)) + list(EXTRA_ID_LABEL_RE.finditer(text))
+    matches.sort(key=lambda item: (item.start(), -(item.end() - item.start())))
+
+    out = []
+    occupied: List[Tuple[int, int]] = []
+    for match in matches:
+        span = match.span()
+        if span_overlaps(span, occupied):
+            continue
+        out.append(match)
+        occupied.append(span)
+    return out
+
+
+def span_follows_identifier_label(text: str, span_start: int) -> bool:
+    matches = list(IDENTIFIER_NUMBER_LABEL_RE.finditer(text)) + list(EXTRA_ID_LABEL_RE.finditer(text))
+    for match in matches:
+        if match.end() > span_start:
+            continue
+        gap = text[match.end():span_start]
+        if all(ch in VALUE_SEPARATOR_CHARS for ch in gap):
+            return True
+    return False
 
 
 def make_kernel_odd(value: int) -> int:
@@ -579,11 +682,15 @@ def get_ocr_detections(lines: List[Dict[str, Any]], *, id_document: bool) -> Lis
         spans = line["spans"]
         conf = line.get("confidence")
         lower = text.lower()
+        identifier_spans = [m.span() for m in DL_RE.finditer(text)]
+        identifier_spans.extend(m.span() for m in DASHED_ID_RE.finditer(text))
 
         # Pattern-level redaction. This is faster and avoids blurring full lines.
         for regex, category, reason in pattern_specs:
             for m in regex.finditer(text):
                 if category == "possible_identifier" and not id_document:
+                    continue
+                if category == "possible_identifier" and DATE_RE.fullmatch(m.group(0)):
                     continue
                 add_detection(
                     dets,
@@ -595,19 +702,36 @@ def get_ocr_detections(lines: List[Dict[str, Any]], *, id_document: bool) -> Lis
                 )
 
         for m in PHONE_RE.finditer(text):
-            digits = re.sub(r"\D", "", ascii_digits(m.group(0)))
-            if 8 <= len(digits) <= 15:
-                add_detection(dets, category="phone_number", text=m.group(0), box=bbox_for_span(text, m.span(), box, spans), reason="phone-like pattern", confidence=conf)
+            candidate = m.group(0)
+            has_phone_context = any(x in lower for x in ("phone", "mobile", "contact"))
+            if any(sep in candidate for sep in ("-", "/")) and not has_phone_context:
+                continue
+            if DATE_RE.fullmatch(candidate) or DASHED_ID_RE.fullmatch(candidate):
+                continue
+            digits = re.sub(r"\D", "", ascii_digits(candidate))
+            looks_like_phone = (
+                candidate.strip().startswith("+")
+                or has_phone_context
+                or (len(digits) == 10 and digits.startswith("9"))
+            )
+            if looks_like_phone and 8 <= len(digits) <= 15:
+                add_detection(dets, category="phone_number", text=candidate, box=bbox_for_span(text, m.span(), box, spans), reason="phone-like pattern", confidence=conf)
 
         for m in DATE_RE.finditer(text):
+            if span_is_inside_larger(m.span(), identifier_spans):
+                continue
+            if span_follows_identifier_label(text, m.start()):
+                continue
             if id_document or any(x in lower for x in ("dob", "birth", "doi", "issue", "doe", "expiry", "expire")) or any(x in text for x in ("जन्म", "जारी", "म्याद")):
                 add_detection(dets, category="date", text=m.group(0), box=bbox_for_span(text, m.span(), box, spans), reason="date in ID context", confidence=conf)
 
         # Full ID-field value redaction: blur value after labels, keep label visible when possible.
-        label_matches = list(LABEL_RE.finditer(text))
+        label_matches = value_label_matches(text)
         if label_matches and id_document:
             for idx, m in enumerate(label_matches):
-                start = m.end()
+                start, has_separator = value_start_after_label(text, m.end())
+                if not has_separator:
+                    continue
                 while start < len(text) and text[start] in " \t:-–—;,./()।":
                     start += 1
                 end = label_matches[idx + 1].start() if idx + 1 < len(label_matches) else len(text)
@@ -616,9 +740,7 @@ def get_ocr_detections(lines: List[Dict[str, Any]], *, id_document: bool) -> Lis
                 if end <= start:
                     continue
                 value = clean_value(text[start:end])
-                if not value or SAFE_LABEL_RE.fullmatch(value):
-                    continue
-                if not re.search(rf"[A-Za-z\u0900-\u097F{D}]", value):
+                if not is_sensitive_field_value(value):
                     continue
                 add_detection(
                     dets,
