@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-blue-50: #fbf7e8;
+  --color-blue-100: #f3e8bd;
+  --color-blue-200: #e8d381;
+  --color-blue-300: #dcbd52;
+  --color-blue-400: #d4af37;
+  --color-blue-500: #d4af37;
+  --color-blue-600: #b89224;
+  --color-blue-700: #806417;
+  --color-blue-800: #4f3d0e;
+  --color-blue-900: #141b3a;
+
+  --color-indigo-400: #6e5bff;
+  --color-indigo-600: #141b3a;
+
+  --color-purple-50: #f0eeff;
+  --color-purple-100: #ded9ff;
+  --color-purple-200: #c2b9ff;
+  --color-purple-300: #a697ff;
+  --color-purple-400: #8675ff;
+  --color-purple-500: #6e5bff;
+  --color-purple-600: #5b49dc;
+  --color-purple-700: #4636aa;
+
+  --color-amber-50: #fbf7e8;
+  --color-amber-100: #f3e8bd;
+  --color-amber-200: #e8d381;
+  --color-amber-300: #dcbd52;
+  --color-amber-400: #d4af37;
+  --color-amber-500: #d4af37;
+  --color-amber-600: #b89224;
+  --color-amber-700: #806417;
+}
+
+@layer base {
+  :root {
+    --nav-bottom-h: 4rem;
+    --nav-top-h: 56px;
+    --nav-top-desktop-h: 57px;
+    --brand: #D4AF37;
+    --brand-dark: #B89224;
+  }
+
+  html {
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #111827;
+    background-color: #f9fafb;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+.leaflet-popup-content {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  margin: 8px 12px !important;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+}
+
+.leaflet-popup-tip-container {
+  display: none !important;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translate(-50%, -12px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+.animate-fade-in-down {
+  animation: fade-in-down 0.25s ease-out forwards;
+}

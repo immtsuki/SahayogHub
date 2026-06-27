@@ -1,0 +1,24 @@
+# This file is used by training/train_yolo.py.
+# train_yolo.py automatically rewrites the path to an absolute path at runtime.
+
+path: datasets/sensitive_fields
+train: images/train
+val: images/val
+
+names:
+  0: citizenship_no
+  1: national_id_no
+  2: license_no
+  3: passport_no
+  4: phone_no
+  5: dob
+  6: issue_date
+  7: expiry_date
+  8: name
+  9: father_name
+  10: mother_name
+  11: address
+  12: blood_group
+  13: photo
+  14: signature
+  15: qr

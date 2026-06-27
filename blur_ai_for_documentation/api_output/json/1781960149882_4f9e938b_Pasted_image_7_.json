@@ -1,0 +1,555 @@
+{
+  "engineRequested": "auto",
+  "engineUsed": "ocr",
+  "mode": "blur",
+  "device": "cuda:0",
+  "gpu": true,
+  "yoloLoaded": false,
+  "easyocrGpu": true,
+  "inputFile": "Pasted image (7).png",
+  "rotationApplied": 0,
+  "idDocumentInferred": true,
+  "extractedData": {
+    "name": "Anil Shrestha",
+    "citizenshipNumber": "51-01-79-01231",
+    "drivingLicenseNumber": "03-06-01390579",
+    "phoneNumber": "03-06-01390579",
+    "dateOfBirth": null,
+    "address": "Kushma- 5,OTHERS Dhaw",
+    "email": null,
+    "passportNumber": null,
+    "issueDate": null,
+    "expiryDate": null,
+    "otherNumbers": [
+      "01390579",
+      "9842849376"
+    ],
+    "rawText": "Below details are displayed as per your record in\nO Department of Transport Management\nनेपाल सरकार\nGOVERNMENT OF NEPAL\nसवारी चालक अनुमतिपत्र\nDRIVING LICENSE\nD.L.No.: 03-06-01390579\nB.G.: B+ Name: Anil Shrestha\nAddress: Kushma- 5,OTHERS Dhaw\nalagiri Nepal\n0.0.8: 25-08-2005\nFIH Name:\nCitizenship No: 51-01-79-01231\nD.0.!.: 28-12-2022 Passport Noः Category A\nD.0.E.: 27-12-2027 Phone No : 9842849376\nSignature of Holder\nIssued By"
+  },
+  "ocrLines": [
+    "Below details are displayed as per your record in",
+    "O Department of Transport Management",
+    "नेपाल सरकार",
+    "GOVERNMENT OF NEPAL",
+    "सवारी चालक अनुमतिपत्र",
+    "DRIVING LICENSE",
+    "D.L.No.: 03-06-01390579",
+    "B.G.: B+ Name: Anil Shrestha",
+    "Address: Kushma- 5,OTHERS Dhaw",
+    "alagiri Nepal",
+    "0.0.8: 25-08-2005",
+    "FIH Name:",
+    "Citizenship No: 51-01-79-01231",
+    "D.0.!.: 28-12-2022 Passport Noः Category A",
+    "D.0.E.: 27-12-2027 Phone No : 9842849376",
+    "Signature of Holder",
+    "Issued By"
+  ],
+  "ocrItems": [
+    {
+      "text": "Below details are displayed as per your record in",
+      "confidence": 0.6347,
+      "box": [
+        111,
+        84,
+        899,
+        145
+      ],
+      "x1": 111,
+      "y1": 84,
+      "x2": 899,
+      "y2": 145,
+      "cx": 505.0,
+      "cy": 114.5
+    },
+    {
+      "text": "O Department of Transport Management",
+      "confidence": 0.5731,
+      "box": [
+        29,
+        103,
+        759,
+        191
+      ],
+      "x1": 29,
+      "y1": 103,
+      "x2": 759,
+      "y2": 191,
+      "cx": 394.0,
+      "cy": 147.0
+    },
+    {
+      "text": "नेपाल सरकार",
+      "confidence": 0.8843,
+      "box": [
+        415,
+        293,
+        539,
+        331
+      ],
+      "x1": 415,
+      "y1": 293,
+      "x2": 539,
+      "y2": 331,
+      "cx": 477.0,
+      "cy": 312.0
+    },
+    {
+      "text": "GOVERNMENT OF NEPAL",
+      "confidence": 0.6988,
+      "box": [
+        331,
+        323,
+        633,
+        363
+      ],
+      "x1": 331,
+      "y1": 323,
+      "x2": 633,
+      "y2": 363,
+      "cx": 482.0,
+      "cy": 343.0
+    },
+    {
+      "text": "सवारी चालक",
+      "confidence": 0.7027,
+      "box": [
+        355,
+        357,
+        502,
+        402
+      ],
+      "x1": 355,
+      "y1": 357,
+      "x2": 502,
+      "y2": 402,
+      "cx": 428.5,
+      "cy": 379.5
+    },
+    {
+      "text": "अनुमतिपत्र",
+      "confidence": 0.8618,
+      "box": [
+        491,
+        348,
+        611,
+        410
+      ],
+      "x1": 491,
+      "y1": 348,
+      "x2": 611,
+      "y2": 410,
+      "cx": 551.0,
+      "cy": 379.0
+    },
+    {
+      "text": "DRIVING LICENSE",
+      "confidence": 0.6324,
+      "box": [
+        356,
+        391,
+        609,
+        435
+      ],
+      "x1": 356,
+      "y1": 391,
+      "x2": 609,
+      "y2": 435,
+      "cx": 482.5,
+      "cy": 413.0
+    },
+    {
+      "text": "D.L.No.: 03-06-01390579",
+      "confidence": 0.7803,
+      "box": [
+        29,
+        418,
+        361,
+        461
+      ],
+      "x1": 29,
+      "y1": 418,
+      "x2": 361,
+      "y2": 461,
+      "cx": 195.0,
+      "cy": 439.5
+    },
+    {
+      "text": "B.G.: B+",
+      "confidence": 0.8958,
+      "box": [
+        30,
+        459,
+        141,
+        497
+      ],
+      "x1": 30,
+      "y1": 459,
+      "x2": 141,
+      "y2": 497,
+      "cx": 85.5,
+      "cy": 478.0
+    },
+    {
+      "text": "Name: Anil Shrestha",
+      "confidence": 0.6739,
+      "box": [
+        269,
+        477,
+        551,
+        515
+      ],
+      "x1": 269,
+      "y1": 477,
+      "x2": 551,
+      "y2": 515,
+      "cx": 410.0,
+      "cy": 496.0
+    },
+    {
+      "text": "Address: Kushma- 5,OTHERS Dhaw",
+      "confidence": 0.5545,
+      "box": [
+        272,
+        501,
+        724,
+        552
+      ],
+      "x1": 272,
+      "y1": 501,
+      "x2": 724,
+      "y2": 552,
+      "cx": 498.0,
+      "cy": 526.5
+    },
+    {
+      "text": "alagiri Nepal",
+      "confidence": 0.9568,
+      "box": [
+        388,
+        537,
+        577,
+        590
+      ],
+      "x1": 388,
+      "y1": 537,
+      "x2": 577,
+      "y2": 590,
+      "cx": 482.5,
+      "cy": 563.5
+    },
+    {
+      "text": "0.0.8: 25-08-2005",
+      "confidence": 0.5748,
+      "box": [
+        272,
+        577,
+        523,
+        618
+      ],
+      "x1": 272,
+      "y1": 577,
+      "x2": 523,
+      "y2": 618,
+      "cx": 397.5,
+      "cy": 597.5
+    },
+    {
+      "text": "FIH Name:",
+      "confidence": 0.5644,
+      "box": [
+        269,
+        611,
+        421,
+        653
+      ],
+      "x1": 269,
+      "y1": 611,
+      "x2": 421,
+      "y2": 653,
+      "cx": 345.0,
+      "cy": 632.0
+    },
+    {
+      "text": "Citizenship No: 51-01-79-01231",
+      "confidence": 0.7678,
+      "box": [
+        274,
+        635,
+        670,
+        688
+      ],
+      "x1": 274,
+      "y1": 635,
+      "x2": 670,
+      "y2": 688,
+      "cx": 472.0,
+      "cy": 661.5
+    },
+    {
+      "text": "Category A",
+      "confidence": 0.9846,
+      "box": [
+        703,
+        669,
+        859,
+        709
+      ],
+      "x1": 703,
+      "y1": 669,
+      "x2": 859,
+      "y2": 709,
+      "cx": 781.0,
+      "cy": 689.0
+    },
+    {
+      "text": "D.0.!.: 28-12-2022 Passport Noः",
+      "confidence": 0.4652,
+      "box": [
+        40,
+        680,
+        448,
+        728
+      ],
+      "x1": 40,
+      "y1": 680,
+      "x2": 448,
+      "y2": 728,
+      "cx": 244.0,
+      "cy": 704.0
+    },
+    {
+      "text": "D.0.E.: 27-12-2027 Phone No : 9842849376",
+      "confidence": 0.6178,
+      "box": [
+        40,
+        701,
+        586,
+        763
+      ],
+      "x1": 40,
+      "y1": 701,
+      "x2": 586,
+      "y2": 763,
+      "cx": 313.0,
+      "cy": 732.0
+    },
+    {
+      "text": "Signature of Holder",
+      "confidence": 0.946,
+      "box": [
+        695,
+        805,
+        875,
+        843
+      ],
+      "x1": 695,
+      "y1": 805,
+      "x2": 875,
+      "y2": 843,
+      "cx": 785.0,
+      "cy": 824.0
+    },
+    {
+      "text": "Issued By",
+      "confidence": 0.8833,
+      "box": [
+        146,
+        840,
+        250,
+        870
+      ],
+      "x1": 146,
+      "y1": 840,
+      "x2": 250,
+      "y2": 870,
+      "cx": 198.0,
+      "cy": 855.0
+    }
+  ],
+  "sensitiveDetections": [
+    {
+      "source": "ocr",
+      "category": "drivers_license_number",
+      "text": "03-06-01390579",
+      "confidence": 0.7803,
+      "box": [
+        159,
+        418,
+        361,
+        461
+      ],
+      "reason": [
+        "driving license number pattern"
+      ],
+      "redacted": true
+    },
+    {
+      "source": "ocr",
+      "category": "id_field_value",
+      "text": "B+",
+      "confidence": 0.7849,
+      "box": [
+        113,
+        459,
+        141,
+        497
+      ],
+      "reason": [
+        "value after sensitive ID label"
+      ],
+      "redacted": true
+    },
+    {
+      "source": "ocr",
+      "category": "id_field_value",
+      "text": "Anil Shrestha",
+      "confidence": 0.7849,
+      "box": [
+        358,
+        477,
+        551,
+        515
+      ],
+      "reason": [
+        "value after sensitive ID label"
+      ],
+      "redacted": true
+    },
+    {
+      "source": "ocr",
+      "category": "id_field_value",
+      "text": "Kushma- 5,OTHERS Dhaw",
+      "confidence": 0.5545,
+      "box": [
+        408,
+        501,
+        724,
+        552
+      ],
+      "reason": [
+        "value after sensitive ID label"
+      ],
+      "redacted": true
+    },
+    {
+      "source": "ocr",
+      "category": "possible_identifier",
+      "text": "25-08-2005",
+      "confidence": 0.5748,
+      "box": [
+        375,
+        577,
+        523,
+        618
+      ],
+      "reason": [
+        "dashed ID-like number"
+      ],
+      "redacted": true
+    },
+    {
+      "source": "ocr",
+      "category": "date",
+      "text": "51-01-79",
+      "confidence": 0.7678,
+      "box": [
+        485,
+        635,
+        591,
+        688
+      ],
+      "reason": [
+        "date in ID context"
+      ],
+      "redacted": true
+    },
+    {
+      "source": "ocr",
+      "category": "drivers_license_number",
+      "text": "01-79-01231",
+      "confidence": 0.7678,
+      "box": [
+        525,
+        635,
+        670,
+        688
+      ],
+      "reason": [
+        "driving license number pattern"
+      ],
+      "redacted": true
+    },
+    {
+      "source": "ocr",
+      "category": "id_field_value",
+      "text": "ः Category A",
+      "confidence": 0.7249,
+      "box": [
+        435,
+        669,
+        859,
+        728
+      ],
+      "reason": [
+        "value after sensitive ID label"
+      ],
+      "redacted": true
+    },
+    {
+      "source": "ocr",
+      "category": "possible_identifier",
+      "text": "28-12-2022",
+      "confidence": 0.7249,
+      "box": [
+        145,
+        680,
+        277,
+        728
+      ],
+      "reason": [
+        "dashed ID-like number"
+      ],
+      "redacted": true
+    },
+    {
+      "source": "ocr",
+      "category": "possible_identifier",
+      "text": "27-12-2027",
+      "confidence": 0.6178,
+      "box": [
+        149,
+        701,
+        286,
+        763
+      ],
+      "reason": [
+        "dashed ID-like number"
+      ],
+      "redacted": true
+    },
+    {
+      "source": "ocr",
+      "category": "phone_number",
+      "text": "9842849376",
+      "confidence": 0.6178,
+      "box": [
+        450,
+        701,
+        586,
+        763
+      ],
+      "reason": [
+        "Nepal phone pattern"
+      ],
+      "redacted": true
+    }
+  ],
+  "sensitiveCount": 11,
+  "redactedCount": 11,
+  "savedUpload": "C:\\ai_fastapi_project\\ai_project_21\\api_output\\uploads\\1781960149882_4f9e938b_Pasted_image_7_.png",
+  "savedRedactedImage": "C:\\ai_fastapi_project\\ai_project_21\\api_output\\redacted\\1781960149882_4f9e938b_Pasted_image_7_.redacted.png",
+  "savedJson": "C:\\ai_fastapi_project\\ai_project_21\\api_output\\json\\1781960149882_4f9e938b_Pasted_image_7_.json",
+  "redactedUrl": "/files/redacted/1781960149882_4f9e938b_Pasted_image_7_.redacted.png",
+  "jsonUrl": "/files/json/1781960149882_4f9e938b_Pasted_image_7_.json"
+}
